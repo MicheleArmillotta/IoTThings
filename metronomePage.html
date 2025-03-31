@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestione BPM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet" />
+  <script>
+    const apiBaseUrl = "http://192.168.8.201:5000"; // Cambia se il server è su un altro indirizzo
+
+    async function getBpm() {
+      const response = await fetch(`${apiBaseUrl}/bpm`);
+      const data = await response.json();
+      document.getElementById("bpm-display").innerText = `BPM Attuale: ${data.bpm}`;
+    }
+
+    async function setBpm() {
+      const bpmValue = document.getElementById("bpm-input").value;
+      if (!bpmValue || isNaN(bpmValue) || bpmValue <= 0) {
+        alert("Inserisci un valore BPM valido!");
+        return;
+      }
+      const response = await fetch(`${apiBaseUrl}/bpm`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bpm: Number(bpmValue) })
+      });
+      const data = await response.json();
+      alert(data.message);
+      getBpm();
+    }
+
+    async function getBpmMax() {
+      const response = await fetch(`${apiBaseUrl}/bpm/max`);
+      const data = await response.json();
+      document.getElementById("bpm-max-display").innerText = `BPM Massimo: ${data.bpm}`;
+    }
+
+    async function deleteBpmMax() {
+      const response = await fetch(`${apiBaseUrl}/bpm/max`, { method: "DELETE" });
+      const data = await response.json();
+      alert(data.message);
+      getBpmMax();
+    }
+
+    async function getBpmMin() {
+      const response = await fetch(`${apiBaseUrl}/bpm/min`);
+      const data = await response.json();
+      document.getElementById("bpm-min-display").innerText = `BPM Minimo: ${data.bpm}`;
+    }
+
+    async function deleteBpmMin() {
+      const response = await fetch(`${apiBaseUrl}/bpm/min`, { method: "DELETE" });
+      const data = await response.json();
+      alert(data.message);
+      getBpmMin();
+    }
+  </script>
+  <style>
+    /* Reset e font */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(-45deg, #ff9a9e, #fad0c4, #fad0c4, #fbc2eb);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    /* Contenitore card */
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      max-width: 500px;
+      width: 100%;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+      text-align: center;
+      animation: fadeIn 1.2s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    h2 {
+      color: #333;
+      margin-bottom: 25px;
+      font-weight: 600;
+    }
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: 500;
+      color: #555;
+    }
+    /* Input */
+    input[type="number"] {
+      width: 80%;
+      padding: 12px;
+      margin-bottom: 15px;
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+      outline: none;
+    }
+    input[type="number"]:focus {
+      border-color: #ff6f91;
+    }
+    /* Pulsanti */
+    .btn {
+      background-color: #ff6f91;
+      color: #fff;
+      border: none;
+      padding: 12px 25px;
+      margin: 8px 5px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s, transform 0.2s;
+    }
+    .btn:hover {
+      background-color: #ff3e70;
+      transform: translateY(-3px);
+    }
+    .delete-btn {
+      background-color: #ff9671;
+    }
+    .delete-btn:hover {
+      background-color: #e85d45;
+    }
+    /* Sezioni e separatori */
+    .section {
+      margin: 25px 0;
+    }
+    .section hr {
+      border: none;
+      height: 1px;
+      background-color: #eee;
+      margin: 25px 0;
+    }
+    p {
+      font-size: 18px;
+      margin: 15px 0;
+      color: #444;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Gestione BPM</h2>
+
+    <div class="section">
+      <label for="bpm-input">Imposta BPM:</label>
+      <input type="number" id="bpm-input" placeholder="Inserisci BPM" />
+      <button class="btn" onclick="setBpm()">Imposta BPM</button>
+    </div>
+
+    <div class="section">
+      <button class="btn" onclick="getBpm()">Ottieni BPM</button>
+      <p id="bpm-display">BPM Attuale: --</p>
+    </div>
+
+    <hr />
+
+    <div class="section">
+      <button class="btn" onclick="getBpmMax()">Ottieni BPM Massimo</button>
+      <button class="btn delete-btn" onclick="deleteBpmMax()">Elimina BPM Massimo</button>
+      <p id="bpm-max-display">BPM Massimo: --</p>
+    </div>
+
+    <hr />
+
+    <div class="section">
+      <button class="btn" onclick="getBpmMin()">Ottieni BPM Minimo</button>
+      <button class="btn delete-btn" onclick="deleteBpmMin()">Elimina BPM Minimo</button>
+      <p id="bpm-min-display">BPM Minimo: --</p>
+    </div>
+  </div>
+</body>
+</html>
