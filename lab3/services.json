@@ -1,0 +1,34 @@
+[
+    {
+        "rpi_id": "raspberry-001",
+        "service_name": "activate_buzzer",
+        "port": 18080,
+        "input_number": 0,
+        "input_names": [],
+        "client_ip": "192.168.8.201"
+    },
+    {
+        "rpi_id": "raspberry-001",
+        "service_name": "activate_fan",
+        "port": 18081,
+        "input_number": 0,
+        "input_names": [],
+        "client_ip": "192.168.8.201"
+    },
+    {
+        "rpi_id": "raspberry-001",
+        "service_name": "current_temp",
+        "port": 18082,
+        "input_number": 0,
+        "input_names": [],
+        "client_ip": "192.168.8.201"
+    },
+    {
+        "rpi_id": "raspberry-001",
+        "service_name": "flame_status",
+        "port": 18083,
+        "input_number": 0,
+        "input_names": [],
+        "client_ip": "192.168.8.201"
+    }
+]
