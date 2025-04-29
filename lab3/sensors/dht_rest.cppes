@@ -1,0 +1,166 @@
+#include "crow.h"
+#include <wiringPi.h>
+#include <iostream>
+#include <thread>
+#include <chrono>
+#include <atomic>
+#include <vector>
+#include <mutex>
+#include <bitset>
+
+
+
+class DHT11_Reader {
+private:
+    const int pin;
+    const int retries = 5;
+    
+    bool read_raw_data(uint8_t data[5]) {
+        // Inizializza l'array
+        std::fill_n(data, 5, 0);
+        
+        // Segnale di start
+        pinMode(pin, OUTPUT);
+        digitalWrite(pin, LOW);
+        delay(18);
+        digitalWrite(pin, HIGH);
+        delayMicroseconds(40);
+        pinMode(pin, INPUT);
+        
+        // Attendi risposta
+        if (wait_for_level(LOW, 1000) == -1) return false;
+        if (wait_for_level(HIGH, 1000) == -1) return false;
+        if (wait_for_level(LOW, 1000) == -1) return false;
+        
+        // Leggi i 40 bit
+        for (int i = 0; i < 40; i++) {
+            if (wait_for_level(HIGH, 1000) == -1) return false;
+            auto duration = wait_for_level(LOW, 1000);
+            if (duration == -1) return false;
+            
+            data[i/8] <<= 1;
+            if (duration > 30) {  // Soglia per "1"
+                data[i/8] |= 1;
+            }
+        }
+        
+        // Verifica checksum
+        return (data[4] == ((data[0] + data[1] + data[2] + data[3]) & 0xFF));
+    }
+    
+    int wait_for_level(int level, int timeout_us) {
+        for (int i = 0; i < timeout_us; i++) {
+            if (digitalRead(pin) == level) return i;
+            delayMicroseconds(1);
+        }
+        return -1;
+    }
+
+public:
+    DHT11_Reader(int pin) : pin(pin) {
+        if (wiringPiSetupGpio() == -1) {
+            throw std::runtime_error("Failed to initialize wiringPi");
+        }
+    }
+    
+    bool read(float &temperature, float &humidity) {
+        uint8_t data[5];
+        
+        for (int attempt = 0; attempt < retries; attempt++) {
+            if (read_raw_data(data)) {
+                humidity = data[0];
+                temperature = data[2];
+                return true;
+            }
+            delay(100);
+        }
+        return false;
+    }
+};
+
+class DHTMonitor {
+private:
+    DHT11_Reader sensor;
+    std::vector<std::pair<float, float>> readings;
+    mutable std::mutex readings_mutex;
+    std::atomic<bool> running{false};
+    std::thread sensor_thread;
+
+public:
+    DHTMonitor(int pin) : sensor(pin) {}
+    
+    ~DHTMonitor() { stop(); }
+
+    void start() {
+        running = true;
+        sensor_thread = std::thread([this]() {
+            while (running) {
+                float temp, hum;
+                if (sensor.read(temp, hum)) {
+                    {
+                        std::lock_guard<std::mutex> lock(readings_mutex);
+                        readings.emplace_back(temp, hum);
+                        if (readings.size() > MAX_READINGS) {
+                            readings.erase(readings.begin());
+                        }
+                    }
+                    std::cout << "Temp: " << temp << "°C, Hum: " << hum << "%" << std::endl;
+                } else {
+                    std::cerr << "Failed to read sensor" << std::endl;
+                }
+                std::this_thread::sleep_for(std::chrono::seconds(2));
+            }
+        });
+    }
+
+    void stop() {
+        running = false;
+        if (sensor_thread.joinable()) sensor_thread.join();
+    }
+
+    std::pair<float, float> get_averages() const {
+        std::lock_guard<std::mutex> lock(readings_mutex);
+        if (readings.empty()) return {0, 0};
+        
+        float temp_sum = 0, hum_sum = 0;
+        for (const auto& reading : readings) {
+            temp_sum += reading.first;
+            hum_sum += reading.second;
+        }
+        
+        return {temp_sum/readings.size(), hum_sum/readings.size()};
+    }
+};
+
+// [Resto del codice identico all'esempio precedente per Crow]
+int main() {
+    DHTMonitor monitor;
+    monitor.start();
+
+    crow::SimpleApp app;
+
+    CROW_ROUTE(app, "/current")
+    ([&monitor]() {
+        auto data = monitor.get_current_reading();
+        crow::json::wvalue result;
+        result["temperature"] = data.temperature;
+        result["humidity"] = data.humidity;
+        result["valid"] = data.valid;
+        return result;
+    });
+
+    CROW_ROUTE(app, "/averages")
+    ([&monitor]() {
+        auto [avg_temp, avg_hum] = monitor.get_averages();
+        crow::json::wvalue result;
+        result["average_temperature"] = avg_temp;
+        result["average_humidity"] = avg_hum;
+        return result;
+    });
+
+    std::cout << "Server running on port 18080" << std::endl;
+    app.port(18080).multithreaded().run();
+
+    monitor.stop();
+    return 0;
+}
