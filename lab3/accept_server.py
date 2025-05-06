@@ -4,10 +4,10 @@ import os
 
 app = Flask(__name__)
 
-# Percorso del file dove salviamo i dati
+# Path to the file where we save the data
 services_file = "services.json"
 
-# Funzione per caricare i servizi esistenti
+# Function to load existing services
 def load_services():
     if os.path.exists(services_file):
         with open(services_file, 'r') as f:
@@ -17,7 +17,7 @@ def load_services():
                 return []
     return []
 
-# Funzione per salvare i servizi aggiornati
+# Function to save updated services
 def save_services(services):
     with open(services_file, 'w') as f:
         json.dump(services, f, indent=4)
@@ -28,17 +28,17 @@ def register_service():
     if not service_data:
         return jsonify({"error": "Invalid JSON"}), 400
 
-    # Aggiungiamo l'IP del client che ha fatto la richiesta
+    # Let's add the IP of the client that made the request
     client_ip = request.remote_addr
     service_data['client_ip'] = client_ip
 
-    # Carichiamo i servizi esistenti
+    # Let's load existing services
     services = load_services()
 
-    # Aggiungiamo il nuovo servizio
+    # Let's add the new service
     services.append(service_data)
 
-    # Salviamo tutto
+    # Let's save everything
     save_services(services)
 
     return jsonify({"message": "Service registered successfully"}), 200
