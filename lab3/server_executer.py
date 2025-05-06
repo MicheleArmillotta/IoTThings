@@ -6,15 +6,15 @@ import requests
 
 app = Flask(__name__)
 
-# Carica i servizi disponibili dal file JSON
+# Load available services from JSON file
 with open('services.json', 'r') as f:
     services_list = json.load(f)
 
-# Trasforma la lista in un dizionario: chiave = service_name
+# Transform the list into a dictionary: key = service_name
 services = {service['service_name']: service for service in services_list}
 
-compositions = []  # Lista di relazioni create dall'utente
-execution_interval = None  # Intervallo globale
+compositions = []  # List of relationships created by the user
+execution_interval = None  # Global range
 
 print("WARNING: THIS IS TEST CODE, HARDCODED CODE, ITS NOT RELIABLE AND NOT PRODUCTION READY\n")
 
@@ -29,7 +29,7 @@ def save_composition():
     compositions = data.get('compositions', [])
     execution_interval = data.get('interval', None)
 
-    # Avvia l'esecutore in un thread separato
+    # Start the executor in a separate thread
     threading.Thread(target=executor, daemon=True).start()
 
     return jsonify({"status": "Composition saved and execution started"})
@@ -45,10 +45,13 @@ def executor():
 
             print(f"Executing relation: {service_a} -> {service_b} ({relation})")
 
-            # Decide se chiamare GET o POST
+            # Decides whether to call GET or POST
             method_a = "post" if "activate" in service_a.lower() else "get"
             method_b = "post" if "activate" in service_b.lower() else "get"
 
+            #the logic of the IDE is "hardcoded", to have a general program, in which the relations can be of any type and the 
+            #inputs and outputs at any scale we should change protocol and exchange more information between the services and the edge
+            
             try:
                 if method_a == "post":
                     resp_a = requests.post(f"http://{services[service_a]['client_ip']}:{services[service_a]['port']}/{service_a}")
