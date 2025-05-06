@@ -1,15 +1,15 @@
-#include "crow.h" // Assicurati di avere crow_all.h
+#include "crow.h" // Make sure you have crow_all.h
 #include <gpiod.h>
 #include <thread>
 #include <chrono>
 #include <atomic>
 
-constexpr char* CHIPNAME = "gpiochip0";  // Tipico su Raspberry Pi OS
-constexpr int GPIO_PIN = 19;             // GPIO 19 (Pin fisico 35)
+constexpr char* CHIPNAME = "gpiochip0";  // Typical on Raspberry Pi OS
+constexpr int GPIO_PIN = 19;             // GPIO 19 (Physical Pin 35)
 
 std::atomic<bool> buzzer_active(false);
 
-// Funzione per far suonare il buzzer
+// Function to sound the buzzer
 void buzzer_alarm() {
     gpiod_chip* chip = gpiod_chip_open_by_name(CHIPNAME);
     if (!chip) {
@@ -33,7 +33,7 @@ void buzzer_alarm() {
     auto start = std::chrono::steady_clock::now();
     auto duration = std::chrono::seconds(10);
 
-    // Cicla per 10 secondi
+    // Cycle for 10 seconds
     while (std::chrono::steady_clock::now() - start < duration) {
         gpiod_line_set_value(line, 1);
         std::this_thread::sleep_for(std::chrono::microseconds(500));  // mezzo millisecondo acceso
@@ -42,7 +42,7 @@ void buzzer_alarm() {
         std::this_thread::sleep_for(std::chrono::microseconds(500));  // mezzo millisecondo spento
     }
 
-    // Spegni il buzzer
+    // Turn off the buzzer
     gpiod_line_set_value(line, 0);
 
     gpiod_line_release(line);
