@@ -7,10 +7,10 @@
 #include <vector>
 #include <mutex>
 
-// Definizione del pin per il sensore di fiamma KY-026
+// Pin definition for KY-026 flame sensor
 constexpr int FLAME_SENSOR_PIN = 6;  // Cambia questo pin in base alla tua configurazione
 
-// Struttura dati per memorizzare le rilevazioni della fiamma
+// Data structure to store flame readings
 class FlameDetector {
 private:
     static constexpr size_t MAX_READINGS = 300;
@@ -26,29 +26,29 @@ public:
         stop();
     }
 
-    // Avvia il thread di monitoraggio
+    // Start the monitoring thread
     void start() {
         if (running) return;
         
         running = true;
         sensor_thread = std::thread([this]() {
-            // Inizializzazione wiringPi
+           // Initialize wiringPi
             if (wiringPiSetupGpio() == -1) {
                 std::cerr << "Errore nell'inizializzazione di wiringPi!" << std::endl;
                 running = false;
                 return;
             }
             
-            // Configurazione pin
+            // Pin configuration
             pinMode(FLAME_SENSOR_PIN, INPUT);
             
-            std::cout << "Monitoraggio del sensore di fiamma avviato..." << std::endl;
+            std::cout << "Flame sensor monitoring started..." << std::endl;
             
             while (running) {
-                // La lettura del sensore - LOW (0) quando non c'è fiamma, HIGH (1) quando rileva fiamma
+                // Sensor reading - LOW (0) when there is no flame, HIGH (1) when it detects flame
                 bool flame_detected = (digitalRead(FLAME_SENSOR_PIN) == HIGH);
                 
-                // Aggiunta della nuova rilevazione
+                // Adding new detection
                 {
                     std::lock_guard<std::mutex> lock(readings_mutex);
                     readings.push_back(flame_detected);
@@ -61,13 +61,13 @@ public:
                     }
                 }
                 
-                // Breve pausa tra le letture
+               // Short break between readings
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
         });
     }
     
-    // Ferma il thread di monitoraggio
+    // Stop the monitoring thread
     void stop() {
         if (!running) return;
         
@@ -77,31 +77,31 @@ public:
         }
     }
     
-    // Verifica se è stata rilevata una fiamma nelle ultime MAX_READINGS letture
+    // Check if a flame was detected in the last MAX_READINGS readings
     bool was_flame_detected() const {
         std::lock_guard<std::mutex> lock(readings_mutex);
         
         for (const auto& reading : readings) {
             if (reading) {
-                return true;  // Se anche solo una lettura ha rilevato fiamma, ritorna true
+                return true;  // If even one reading detected flame, returns true
             }
         }
         
-        return false;  // Nessuna fiamma rilevata
+        return false;  // No flame detected
     }
 };
 
 int main() {
-    // Istanza del rilevatore di fiamma
+    // Flame detector instance
     FlameDetector detector;
     
-    // Avvio del monitoraggio del sensore
+    // Start sensor monitoring
     detector.start();
     
-    // Setup dell'applicazione Crow
+   // Crow Application Setup
     crow::SimpleApp app;
     
-    // API endpoint per verificare se è stata rilevata una fiamma
+    // API endpoint to check if a flame has been detected
     CROW_ROUTE(app, "/flame_status")
     ([&detector]() {
         crow::json::wvalue response;
@@ -109,11 +109,11 @@ int main() {
         return response;
     });
     
-    // Avvio del server
+    // Server startup
     std::cout << "Server avviato sulla porta 18080..." << std::endl;
     app.port(18083).multithreaded().run();
     
-    // Ferma il detector quando il programma termina
+    // Stop the detector when the program ends
     detector.stop();
     
     return 0;
