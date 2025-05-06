@@ -8,11 +8,11 @@
 #include <mutex>
 #include <bitset>
 
-// Definizione di tutte le costanti necessarie
+// Define all necessary constants
 constexpr int DHT_PIN = 18;       // GPIO18
 constexpr size_t MAX_READINGS = 30;
 constexpr int READ_RETRIES = 5;
-constexpr int READ_INTERVAL_MS = 2000; // 2 secondi tra le letture
+constexpr int READ_INTERVAL_MS = 2000; // 2 seconds between reads
 
 
 class DHT11_Reader {
