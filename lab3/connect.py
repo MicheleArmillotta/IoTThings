@@ -3,15 +3,15 @@ import requests
 import time
 import os
 
-# Hardcoded: Lista dei percorsi degli eseguibili dei servizi
+# Hardcoded: List of paths to service executables
 services_paths = [
-    "./actuators/buzzer_rest",  # Eseguibile C++
+    "./actuators/buzzer_rest",  # C++ executable
     "./actuators/servo_rest",
     "./sensors/dht_rest",
     "./sensors/flame_rest"
 ]
 
-# Hardcoded: Informazioni da inviare all'Edge
+# Hardcoded: Information to send to the Edge
 services_info = [
     {
         "rpi_id": "raspberry-001",
@@ -43,7 +43,7 @@ services_info = [
     }
 ]
 
-# Hardcoded: Endpoint dell'Edge
+# Hardcoded: Edge endpoint
 edge_register_endpoint = "http://192.168.8.242:5000/register"
 # Lista per salvare i processi avviati
 processes = []
