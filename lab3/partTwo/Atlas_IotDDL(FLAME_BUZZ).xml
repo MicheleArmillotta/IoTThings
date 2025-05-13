@@ -1,0 +1,223 @@
+<Atlas_IoTDDL>
+    <Atlas_Thing>
+        <Descriptive_Metadata>
+            <Thing_ATID>MySmartThing01</Thing_ATID>
+            <Thing_Name>RaspberrryPi</Thing_Name>
+            <Thing_Owner>IoTLab</Thing_Owner>
+            <Thing_Vendor>RaspberryPiCo</Thing_Vendor>
+            <Thing_Model>4B</Thing_Model>
+            <Thing_ReleaseDate>8/2020</Thing_ReleaseDate>
+            <Thing_Type>Thing of Things</Thing_Type>
+            <Thing_OperatingSystem>Raspbian</Thing_OperatingSystem>
+            <Thing_ShortDescription></Thing_ShortDescription>
+            <LongDescription></LongDescription>
+            <Thing_SSID>MySmartSpace</Thing_SSID>
+            <Space_Coordinates></Space_Coordinates>
+            <Space_Name>Office</Space_Name>
+            <Space_Description>Test smart Space</Space_Description>
+            <Space_Constraints>
+                <Temperature>
+                    <Lower_Bound></Lower_Bound>
+                    <Upper_Bound></Upper_Bound>
+                </Temperature>
+                <Humidity>
+                    <Lower_Bound></Lower_Bound>
+                    <Upper_Bound></Upper_Bound>
+                </Humidity>
+                <Voltage>
+                    <Lower_Bound></Lower_Bound>
+                    <Upper_Bound></Upper_Bound>
+                </Voltage>
+                <Radio_Interference_Radius></Radio_Interference_Radius>
+                <Safe_Temperature_Radius></Safe_Temperature_Radius>
+            </Space_Constraints>
+        </Descriptive_Metadata>
+        <Administrative_Metadata>
+            <Network_Manager>
+                <Module>WiFi</Module>
+                <Type>Built-In</Type>
+                <Network_Name>GL-SFT1200-300</Network_Name>
+                <Network_Passcode>goodlife</Network_Passcode>
+                <MulticastGroup>
+                    <IP>232.1.1.1</IP>
+                    <Port>1235</Port>
+                </MulticastGroup>
+                <Communication_Protocol></Communication_Protocol>
+                <InterOperableCommunication>
+                    <Broker>
+                        <Vendor>HiveMQ</Vendor>
+                        <Dashboard>http://www.mqtt-dashboard.com/</Dashboard>
+                        <IP>broker.hivemq.com</IP>
+                        <Port>1883</Port>
+                    </Broker>
+                    <Topic>
+                        <Root>/Atlas</Root>
+                        <Network_MQTTClient>/Network/MQTT_Client</Network_MQTTClient>
+                        <Network_PrivateBroker>/Network/Private_Broker</Network_PrivateBroker>
+                        <Multicast_ThingIdentity>/Multicast/Tweet_ThingIdentity</Multicast_ThingIdentity>
+                        <Multicast_EntityIdentity>/Multicast/Tweet_EntityIdentity</Multicast_EntityIdentity>
+                        <Multicast_API>/Multicast/API</Multicast_API>
+                        <Unicast>/Unicast/Interaction</Unicast>
+                    </Topic>
+                </InterOperableCommunication>
+                <OMA_DM>
+                    <AccessName>Eclipse Leshan</AccessName>
+                    <IP>coap://leshan.eclipseprojects.io</IP>
+                    <Port>5683</Port>
+                </OMA_DM>
+            </Network_Manager>
+            <Memory_Manager>
+                <Store_Format></Store_Format>
+                <MemoryUnit_Application></MemoryUnit_Application>
+                <MemoryUnit_Knowledge></MemoryUnit_Knowledge>
+            </Memory_Manager>
+        </Administrative_Metadata>
+        <Thing_Attachment>
+
+        </Thing_Attachment>
+        <Structural_Metadata>
+            <Number_Hardware>2</Number_Hardware>
+            <Number_Software>0</Number_Software>
+            <Number_Hybrid>0</Number_Hybrid>
+            <Number_Entities>2</Number_Entities>
+        </Structural_Metadata>
+    </Atlas_Thing>
+    <Atlas_Entities>
+        <Entity_1>
+            <Descriptive_Metadata>
+                <ID>FlameSensor01</ID>
+                <Name>FlameSensor</Name>
+                <Owner></Owner>
+                <Vendor></Vendor>
+                <Category>Hardware</Category>
+                <Type>Connected</Type>
+                <Description></Description>
+            </Descriptive_Metadata>
+            <Services>
+                <Service_1>
+                    <Name>CheckFlameStatus</Name>
+                    <AppCategory>Safety</AppCategory>
+                    <Type>Report</Type>
+                    <Keywords></Keywords>
+                    <Description></Description>
+                    <Contextual_Constraints>
+                        <Time_Window>1seconds</Time_Window>
+                        <Usage_Mode>Multiple</Usage_Mode>
+                        <Concurrent>Yes</Concurrent>
+                    </Contextual_Constraints>
+                    <Temporal_Constraints>
+                        <Working>
+                            <StartTime>6am</StartTime>
+                            <EndTime>10pm</EndTime>
+                        </Working>
+                        <Callable>
+                            <StartTime>6:30am</StartTime>
+                            <EndTime>9:30pm</EndTime>
+                        </Callable>
+                    </Temporal_Constraints>
+                    <OutputDescription>flameStatus</OutputDescription>
+                    <OutputType>int</OutputType>
+                    <Service_Formula><![CDATA[
+// ~ Service body C/C++ code block ~
+// You can use the inputs you defined above by name
+// Any return values should match the specified output type
+
+if (wiringPiSetupGpio() == -1)
+    flameStatus = -1;
+else {
+    pinMode(6, INPUT);
+    int value = digitalRead(6);
+    flameStatus = (value == LOW) ? 1 : 0;
+}
+]]></Service_Formula>
+                    <Service_NumberInputs>0</Service_NumberInputs>
+                    <Service_InputTypes></Service_InputTypes>
+                    <Service_InputDescriptions></Service_InputDescriptions>
+                    <Library_Number>3</Library_Number>
+                    <Libraries>wiringPi.h,stdexcept,iostream</Libraries>
+                    <ADC_Number>0</ADC_Number>
+                </Service_1>
+                <Number_Services>1</Number_Services>
+            </Services>
+            <UnboundedService>
+                <Number_UnboundedServices>0</Number_UnboundedServices>
+            </UnboundedService>
+            <Relationships>
+                <Number_Relationships>0</Number_Relationships>
+            </Relationships>
+        </Entity_1>
+        <Entity_2>
+            <Descriptive_Metadata>
+                <ID>BuzzerActuator01</ID>
+                <Name>Buzzer</Name>
+                <Owner></Owner>
+                <Vendor></Vendor>
+                <Category>Hardware</Category>
+                <Type>Connected</Type>
+                <Description></Description>
+            </Descriptive_Metadata>
+            <Services>
+                <Service_1>
+                    <Name>ActivateBuzzer</Name>
+                    <AppCategory>Time Alarms</AppCategory>
+                    <Type>Action</Type>
+                    <Keywords></Keywords>
+                    <Description></Description>
+                    <Contextual_Constraints>
+                        <Time_Window>5seconds</Time_Window>
+                        <Usage_Mode></Usage_Mode>
+                        <Concurrent></Concurrent>
+                    </Contextual_Constraints>
+                    <Temporal_Constraints>
+                        <Working>
+                            <StartTime>6am</StartTime>
+                            <EndTime>10pm</EndTime>
+                        </Working>
+                        <Callable>
+                            <StartTime>6:30am</StartTime>
+                            <EndTime>9:30pm</EndTime>
+                        </Callable>
+                    </Temporal_Constraints>
+                    <OutputDescription>buzzerStatus</OutputDescription>
+                    <OutputType>int</OutputType>
+                    <Service_Formula><![CDATA[
+// ~ Service body C/C++ code block ~
+// You can use the inputs you defined above by name
+// Any return values should match the specified output type
+
+
+if (wiringPiSetupGpio() == -1) {
+    // Error initializing the WiringPi library
+    buzzerStatus = 0;
+
+} else {
+
+    pinMode(19, OUTPUT);
+    for (unsigned int i = 0; i < 2500; i++) {
+        digitalWrite(19, HIGH);
+        delayMicroseconds(500);
+        digitalWrite(19, LOW);
+        delayMicroseconds(500);
+        buzzerStatus = 1;
+    }
+}
+
+]]></Service_Formula>
+                    <Service_NumberInputs>0</Service_NumberInputs>
+                    <Service_InputTypes></Service_InputTypes>
+                    <Service_InputDescriptions></Service_InputDescriptions>
+                    <Library_Number>3</Library_Number>
+                    <Libraries>wiringPi.h,stdexcept,unistd.h</Libraries>
+                    <ADC_Number>0</ADC_Number>
+                </Service_1>
+                <Number_Services>1</Number_Services>
+            </Services>
+            <UnboundedService>
+                <Number_UnboundedServices>0</Number_UnboundedServices>
+            </UnboundedService>
+            <Relationships>
+                <Number_Relationships>0</Number_Relationships>
+            </Relationships>
+        </Entity_2>
+    </Atlas_Entities>
+</Atlas_IoTDDL>
