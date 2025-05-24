@@ -14,7 +14,7 @@ address_queue = queue.Queue()
 context = IoTContext()
 
 class TweetListener(threading.Thread):
-    def __init__(self, multicast_group='224.0.0.1', port=5007, buffer_size=1024):
+    def __init__(self, multicast_group='232.1.1.1', port=1235, buffer_size=1024):
         super().__init__(daemon=True)
         self.multicast_group = multicast_group
         self.port = port
@@ -26,7 +26,7 @@ class TweetListener(threading.Thread):
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind(('', self.port))  # riceve da tutte le interfacce
 
-        local_ip = '192.168.137.1'
+        local_ip = '192.168.8.237'
         mreq = struct.pack("4s4s", socket.inet_aton(self.multicast_group), socket.inet_aton(local_ip))
         self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 

@@ -15,17 +15,29 @@ class Service:
     keywords: str
 
 @dataclass
+class Entity:
+    thing_name: str
+    space_id: str
+    name: str
+    entity_id: str
+    type: str
+    owner: str
+    vendor: str
+    description: str
+    services: List[Service] = field(default_factory=list)
+
+@dataclass
 class Thing:
     id: str
     name: str
     ip: str
     port: int
     space_id: str
-    type: str
+    model: str
     owner: str
     vendor: str
     description: str
-    services: List[Service] = field(default_factory=list)
+    entities: List[Entity] = field(default_factory=list)
 
 @dataclass
 class Relationship:
@@ -56,36 +68,107 @@ class IoTContext:
         except:
             return "127.0.0.1"
 
-    def add_thing(self, thing_id: str, name: str, space_id: str, type_: str, owner: str, vendor: str, description: str):
+    def add_thing(self, thing_id: str, name: str, space_id: str, model: str, owner: str, vendor: str, description: str):
+        """Aggiunge un thing solo se non esiste già"""
         if thing_id not in self.things:
-            self.things[thing_id] = Thing(name=name, ip="", port=0, id=thing_id, space_id=space_id, type=type_, owner=owner, vendor=vendor, description=description)
-
-    def add_service_to_thing(self, thing_id: str, service_name: str, entity_id: str, space_id: str, api: str, type_: str, app_category: str, description: str, keywords: str):
-        if thing_id in self.things:
-            service = Service(
-                name=service_name,
-                thing_name=self.things[thing_id].name,
-                entity_id=entity_id,
-                space_id=space_id,
-                api=api,
-                type=type_,
-                app_category=app_category,
-                description=description,
-                keywords=keywords
+            self.things[thing_id] = Thing(
+                name=name, 
+                ip="", 
+                port=0, 
+                id=thing_id, 
+                space_id=space_id, 
+                model=model, 
+                owner=owner, 
+                vendor=vendor, 
+                description=description
             )
-            self.things[thing_id].services.append(service)
+          
+
+    def add_service_to_Entity(self, thing_id: str, service_name: str, entity_id: str, space_id: str, api: str, type_: str, app_category: str, description: str, keywords: str):
+        """Aggiunge un servizio a un'entità solo se non esiste già"""
+        if thing_id in self.things:
+            # Trova l'entità con l'entity_id corrispondente
+            entity_found = None
+            for entity in self.things[thing_id].entities:
+                if entity.entity_id == entity_id:
+                    entity_found = entity
+                    break
+            
+            if entity_found:
+                # Controlla se il servizio esiste già (stessa combinazione name + entity_id + api)
+                service_exists = any(
+                    service.name == service_name and 
+                    service.entity_id == entity_id and 
+                    service.api == api
+                    for service in entity_found.services
+                )
+                
+                if not service_exists:
+                    service = Service(
+                        name=service_name,
+                        thing_name=self.things[thing_id].name,
+                        entity_id=entity_id,
+                        space_id=space_id,
+                        api=api,
+                        type=type_,
+                        app_category=app_category,
+                        description=description,
+                        keywords=keywords
+                    )
+                    entity_found.services.append(service)
+                 
+    def add_entity_to_thing(self, thing_id: str, entity_name: str, entity_id: str, space_id: str, type_: str, vendor: str, description: str, owner: str):
+        """Aggiunge un'entità a un thing solo se non esiste già"""
+        if thing_id in self.things:
+            # Controlla se l'entità esiste già (stesso entity_id)
+            entity_exists = any(entity.entity_id == entity_id for entity in self.things[thing_id].entities)
+            
+            if not entity_exists:
+                entity = Entity(
+                    name=entity_name,
+                    thing_name=self.things[thing_id].name,
+                    entity_id=entity_id,
+                    space_id=space_id,
+                    vendor=vendor,
+                    type=type_,
+                    owner=owner,
+                    description=description,
+                )
+                self.things[thing_id].entities.append(entity)
+              
 
     def add_relationship(self, thing_id: str, space_id: str, name: str, owner: str, category: str, type_: str, description: str, fs_name: str, ss_name: str):
-        rel = Relationship(
-            type=type_,
-            src=fs_name,
-            dst=ss_name,
-            condition=None,
-            thing_id=thing_id,
-            space_id=space_id,
-            name=name,
-            owner=owner,
-            category=category,
-            description=description
+        """Aggiunge una relazione solo se non esiste già"""
+        # Controlla se la relazione esiste già (stessa combinazione thing_id + name + src + dst)
+        relationship_exists = any(
+            rel.thing_id == thing_id and 
+            rel.name == name and 
+            rel.src == fs_name and 
+            rel.dst == ss_name
+            for rel in self.relationships
         )
-        self.relationships.append(rel)
+        
+        if not relationship_exists:
+            rel = Relationship(
+                type=type_,
+                src=fs_name,
+                dst=ss_name,
+                condition=None,
+                thing_id=thing_id,
+                space_id=space_id,
+                name=name,
+                owner=owner,
+                category=category,
+                description=description
+            )
+            self.relationships.append(rel)
+           
+    """def get_entity_by_id(self, thing_id: str, entity_id: str) -> Optional[Entity]:
+        #Trova un'entità specifica in base al thing_id e entity_id
+        if thing_id in self.things:
+            for entity in self.things[thing_id].entities:
+                if entity.entity_id == entity_id:
+                    return entity
+        return None
+       """ 
+    

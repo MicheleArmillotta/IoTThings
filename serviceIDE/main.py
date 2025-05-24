@@ -11,7 +11,7 @@ if __name__ == "__main__":
     #context = IoTContext()
 
     # Start listener in background thread
-    listener = TweetListener(multicast_group='224.0.0.1', port=5007)
+    listener = TweetListener(multicast_group='232.1.1.1', port=1235)
     listener_thread = threading.Thread(target=listener.run, daemon=True)
     listener_thread.start()
 

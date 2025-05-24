@@ -23,7 +23,7 @@ class IdentityTweet:
     space_id: str
     name: str
     id: str
-    type: str
+    model: str
     owner: str
     vendor: str
     decription: str
