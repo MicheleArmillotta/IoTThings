@@ -29,9 +29,8 @@ class Entity:
 @dataclass
 class Thing:
     id: str
+    address: str
     name: str
-    ip: str
-    port: int
     space_id: str
     model: str
     owner: str
@@ -55,6 +54,7 @@ class Relationship:
 class IoTContext:
     def __init__(self):
         self.things: Dict[str, Thing] = {}
+        #self.things: List[Thing] = []
         self.relationships: List[Relationship] = []
         self.local_ip = self._get_local_ip()
 
@@ -68,13 +68,12 @@ class IoTContext:
         except:
             return "127.0.0.1"
 
-    def add_thing(self, thing_id: str, name: str, space_id: str, model: str, owner: str, vendor: str, description: str):
+    def add_thing(self, thing_id: str, address:str,name: str, space_id: str, model: str, owner: str, vendor: str, description: str):
         """Aggiunge un thing solo se non esiste già"""
         if thing_id not in self.things:
             self.things[thing_id] = Thing(
                 name=name, 
-                ip="", 
-                port=0, 
+                address = address,
                 id=thing_id, 
                 space_id=space_id, 
                 model=model, 
@@ -82,7 +81,7 @@ class IoTContext:
                 vendor=vendor, 
                 description=description
             )
-          
+            
 
     def add_service_to_Entity(self, thing_id: str, service_name: str, entity_id: str, space_id: str, api: str, type_: str, app_category: str, description: str, keywords: str):
         """Aggiunge un servizio a un'entità solo se non esiste già"""
@@ -162,6 +161,33 @@ class IoTContext:
                 description=description
             )
             self.relationships.append(rel)
+
+
+    def get_things(self):
+        return list(self.things.values())
+    
+
+    def get_entities(self):
+        entities = []
+        for thing in self.get_things():
+            for e in thing.entities:
+                entities.append(e)
+
+        return entities
+
+    
+    def get_services(self):
+        all_services = []
+        for entity in self.get_entities():
+            for s in entity.services:
+                all_services.append(s)
+
+        return all_services
+    
+
+    def get_relationships(self):
+        return self.relationships
+        
            
     """def get_entity_by_id(self, thing_id: str, entity_id: str) -> Optional[Entity]:
         #Trova un'entità specifica in base al thing_id e entity_id

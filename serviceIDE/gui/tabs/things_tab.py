@@ -7,8 +7,9 @@ def create_things_tab(master, context):
 
     def update():
         text.delete(1.0, tk.END)
-        for thing in sorted(context.things.values(), key=lambda x: x.name):
+        for thing in sorted(context.get_things(), key=lambda x: x.name):
             text.insert(tk.END, f"Name: {thing.name}\n")
+            text.insert(tk.END, f"Address: {thing.address}\n")
             text.insert(tk.END, f"Description: {thing.description}\n")
             text.insert(tk.END, "Entities:\n")
             

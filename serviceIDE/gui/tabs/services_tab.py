@@ -9,7 +9,7 @@ def create_services_tab(master, context):
         text.delete(1.0, tk.END)
         service_count = 0
         
-        for thing in sorted(context.things.values(), key=lambda x: x.name):
+        for thing in sorted(context.get_things(), key=lambda x: x.name):
             for entity in sorted(thing.entities, key=lambda e: e.name):
                 for service in sorted(entity.services, key=lambda s: s.name):
                     service_count += 1

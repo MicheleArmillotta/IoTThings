@@ -44,13 +44,14 @@ def process_tweet(data: dict):
 import json
 from models.model import IoTContext
 
-def process_tweet(tweet_data: dict, context: IoTContext):
+def process_tweet(tweet_data: dict, addr,context: IoTContext):
     try:
         tweet_type = tweet_data.get("Tweet Type")
 
         if tweet_type == "Identity_Thing":
             context.add_thing(
                 thing_id=tweet_data["Thing ID"],
+                address = addr,
                 name=tweet_data["Name"],
                 space_id=tweet_data["Space ID"],
                 model=tweet_data.get("Model", ""),

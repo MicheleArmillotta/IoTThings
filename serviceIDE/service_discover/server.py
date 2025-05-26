@@ -26,7 +26,7 @@ class TweetListener(threading.Thread):
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind(('', self.port))  # riceve da tutte le interfacce
 
-        local_ip = '192.168.8.237'
+        local_ip = '192.168.8.242'
         mreq = struct.pack("4s4s", socket.inet_aton(self.multicast_group), socket.inet_aton(local_ip))
         self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
@@ -38,7 +38,7 @@ class TweetListener(threading.Thread):
                 tweet_json = data.decode('utf-8')
                 print(f"[Listener] Received tweet from {addr}: {tweet_json}")
                 tweet_data = json.loads(tweet_json)
-                tweet_obj = process_tweet(tweet_data, context=context)
+                tweet_obj = process_tweet(tweet_data, addr,context=context) #ATTENZIONE: da cambiare con porta statica se non funziona
                 if tweet_obj:
                     tweet_queue.put(tweet_obj)
                     address_queue.put(addr)

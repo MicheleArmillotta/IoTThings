@@ -7,7 +7,7 @@ def create_relationships_tab(master, context):
 
     def update():
         text.delete(1.0, tk.END)
-        for rel in context.relationships:
+        for rel in context.get_relationships():
             text.insert(tk.END, f"Name: {rel.name}\n")
             text.insert(tk.END, f"Category: {rel.category}\n")
             text.insert(tk.END, f"Type: {rel.type}\n")
