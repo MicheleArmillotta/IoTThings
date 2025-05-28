@@ -1,38 +1,49 @@
 import tkinter as tk
+from tkinter import ttk
+
+def make_scrollable_text(parent):
+    text_frame = tk.Frame(parent, bg="#f9f9f9")
+    text_widget = tk.Text(text_frame, wrap="word", bg="white", fg="black", font=("Consolas", 10), relief=tk.FLAT)
+    scrollbar = ttk.Scrollbar(text_frame, command=text_widget.yview)
+    text_widget.config(yscrollcommand=scrollbar.set)
+
+    text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+    return text_frame, text_widget
+
 
 def create_services_tab(master, context):
-    frame = tk.Frame(master)
-    text = tk.Text(frame, wrap="word")
-    text.pack(fill=tk.BOTH, expand=True)
+    frame = tk.Frame(master, bg="#f0f0f0")
+    text_frame, text = make_scrollable_text(frame)
+    text_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     def update():
         text.delete(1.0, tk.END)
-        service_count = 0
-        
+        count = 0
         for thing in sorted(context.get_things(), key=lambda x: x.name):
             for entity in sorted(thing.entities, key=lambda e: e.name):
                 for service in sorted(entity.services, key=lambda s: s.name):
-                    service_count += 1
-                    text.insert(tk.END, f"Service #{service_count}\n")
-                    text.insert(tk.END, f"Name: {service.name}\n")
-                    text.insert(tk.END, f"Thing: {service.thing_name}\n")
-                    text.insert(tk.END, f"Entity: {entity.name} (ID: {service.entity_id})\n")
-                    text.insert(tk.END, f"Type: {service.type}\n")
-                    text.insert(tk.END, f"Category: {service.app_category}\n")
+                    count += 1
+                    text.insert(tk.END, f"🔧 Service #{count}: {service.name}\n", "title")
+                    text.insert(tk.END, f"Thing: {service.thing_name} | Entity: {entity.name} (ID: {service.entity_id})\n")
+                    text.insert(tk.END, f"Type: {service.type} | Category: {service.app_category}\n")
                     text.insert(tk.END, f"API: {service.api}\n")
                     text.insert(tk.END, f"Description: {service.description}\n")
                     if service.keywords:
-                        text.insert(tk.END, f"Keywords: {service.keywords}\n")
+                        text.insert(tk.END, f"Keywords: {', '.join(service.keywords)}\n")
                     text.insert(tk.END, f"Space ID: {service.space_id}\n")
-                    text.insert(tk.END, "-" * 50 + "\n\n")
-        
-        if service_count == 0:
-            text.insert(tk.END, "No services found.\n")
+                    text.insert(tk.END, "-" * 80 + "\n", "separator")
+        if count == 0:
+            text.insert(tk.END, "⚠️ No services found.\n", "warn")
         else:
-            text.insert(tk.END, f"Total services: {service_count}\n")
-        
-        # Programma il prossimo aggiornamento (FUORI dai loop)
+            text.insert(tk.END, f"Total services: {count}\n", "info")
         frame.after(1000, update)
+
+    text.tag_config("title", font=("Arial", 10, "bold"), foreground="#1c4966")
+    text.tag_config("warn", foreground="#d9534f")
+    text.tag_config("info", foreground="#5cb85c")
+    text.tag_config("separator", foreground="#aaaaaa")
 
     update()
     return frame

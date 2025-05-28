@@ -1,119 +1,118 @@
 import tkinter as tk
-from tkinter import simpledialog, messagebox, filedialog, ttk
+from tkinter import simpledialog, messagebox, ttk
+from models.model import IoTApp, Relationship, Service
 
-# Mock App representation
-class IoTApp: #utilizzarla come "contesto delle app"
-    def __init__(self, name, services=None, relationships=None):
-        self.name = name
-        self.services = services if services else []
-        self.relationships = relationships if relationships else []
-
-# Editor for composing IoT Apps
 class AppEditor(tk.Toplevel):
     def __init__(self, master, context, on_finalize):
         super().__init__(master)
-        self.title("IoT App Editor")
+        self.title("🛠️ IoT App Editor")
         self.context = context
         self.on_finalize = on_finalize
         self.selected_services = []
-        self.composition = []  # Tuples of (service_name, relationship_type)
+        self.relationships = []
 
-        self.ordered_relationships = []
-        self.order_based_relationships = []
-        self.condition_based_relationships = []
-
-        # Layout setup
+        self.configure(bg="#f0f0f0")
         self.grid_columnconfigure(1, weight=1)
 
-        # Section 1: Available Services
-        available_label = tk.Label(self, text="Available Services")
-        available_label.grid(row=0, column=0, padx=10, pady=5)
-
-        self.available_listbox = tk.Listbox(self)
+        # Available Services
+        ttk.Label(self, text="Available Services", font=("Arial", 10, "bold")).grid(row=0, column=0, padx=10, pady=5)
+        self.available_listbox = tk.Listbox(self, bg="white", fg="black", font=("Arial", 10), relief=tk.FLAT)
         for service in context.get_services():
             self.available_listbox.insert(tk.END, f"{service.name} ({service.thing_name})")
-        self.available_listbox.grid(row=1, column=0, padx=10, pady=5, sticky="ns")
+        list_scroll = ttk.Scrollbar(self, command=self.available_listbox.yview)
+        self.available_listbox.config(yscrollcommand=list_scroll.set)
+        self.available_listbox.grid(row=1, column=0, padx=(10, 0), pady=5, sticky="ns")
+        list_scroll.grid(row=1, column=0, padx=(0, 10), pady=5, sticky="nse")
 
-        # Drag & Drop button
-        self.add_btn = tk.Button(self, text="Add →", command=self.add_service_to_composition)
-        self.add_btn.grid(row=1, column=1, pady=5)
+        # Add button
+        self.add_btn = ttk.Button(self, text="Add →", command=self.add_service_to_composition)
+        self.add_btn.grid(row=1, column=1, padx=5, pady=5)
 
-        # Section 2: Composition Area
-        composition_label = tk.Label(self, text="Compose App")
-        composition_label.grid(row=0, column=2, padx=10, pady=5)
+        # Composition Area
+        ttk.Label(self, text="Compose App", font=("Arial", 10, "bold")).grid(row=0, column=2, padx=10, pady=5)
+        self.composition_canvas = tk.Canvas(self, bg="white", highlightthickness=0)
+        self.composition_frame = tk.Frame(self.composition_canvas, bg="white")
+        self.composition_scroll = ttk.Scrollbar(self, command=self.composition_canvas.yview)
+        self.composition_canvas.config(yscrollcommand=self.composition_scroll.set)
+        self.composition_canvas.create_window((0, 0), window=self.composition_frame, anchor="nw")
+        self.composition_frame.bind("<Configure>", lambda e: self.composition_canvas.configure(scrollregion=self.composition_canvas.bbox("all")))
 
-        self.composition_frame = tk.Frame(self)
-        self.composition_frame.grid(row=1, column=2, padx=10, pady=5, sticky="nsew")
-        self.composition_frame.grid_columnconfigure(1, weight=1)
-
+        self.composition_canvas.grid(row=1, column=2, padx=(10, 0), pady=5, sticky="nsew")
+        self.composition_scroll.grid(row=1, column=2, padx=(0, 10), sticky="nse")
         self.composition_widgets = []
 
         # Action Buttons
-        btn_frame = tk.Frame(self)
+        btn_frame = tk.Frame(self, bg="#f0f0f0")
         btn_frame.grid(row=2, column=0, columnspan=3, pady=10)
 
-        self.clear_button = tk.Button(btn_frame, text="Clear", command=self.clear_editor)
-        self.clear_button.pack(side=tk.LEFT, padx=5)
-
-        self.finalize_button = tk.Button(btn_frame, text="Finalize", command=self.finalize_app)
-        self.finalize_button.pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_frame, text="🧹 Clear", command=self.clear_editor).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="✅ Finalize", command=self.finalize_app).pack(side=tk.RIGHT, padx=5)
 
     def add_service_to_composition(self):
         selected = self.available_listbox.curselection()
         for index in selected:
             service_entry = self.available_listbox.get(index)
             service_name = service_entry.split(" (")[0]
+            service_obj = next((s for s in self.context.get_services() if s.name == service_name), None)
+            if not service_obj:
+                continue
 
             row = len(self.composition_widgets)
-            lbl = tk.Label(self.composition_frame, text=service_name)
-            lbl.grid(row=row, column=0, sticky="w")
+            label = ttk.Label(self.composition_frame, text=service_name, background="white")
+            label.grid(row=row, column=0, sticky="w", padx=5, pady=2)
+            self.composition_widgets.append(service_obj)
 
-            self.composition_widgets.append(service_name)
-
-            # Handle relationships
             if row >= 1:
                 prev_service = self.composition_widgets[-2]
                 current_service = self.composition_widgets[-1]
 
                 rel_type = simpledialog.askstring(
                     "Relationship Type",
-                    f"Define relationship from {prev_service} to {current_service}:\nType 1 = ordered,\nType 2 = order-based if completed,\nType 3 = conditional",
+                    f"Define relationship from {prev_service.name} to {current_service.name}:\n"
+                    "Type 1 = ordered\nType 2 = order-based if completed\nType 3 = conditional",
                     parent=self
                 )
 
                 if rel_type == "1":
-                    self.ordered_relationships.append((prev_service, current_service))
+                    category, rtype, desc = "order", "ordered", "Simple order"
                 elif rel_type == "2":
-                    self.order_based_relationships.append((prev_service, current_service))
+                    category, rtype, desc = "order-based", "on-success", "Executes on successful completion"
                 elif rel_type == "3":
-                    condition = simpledialog.askstring(
-                        "Condition",
-                        f"Define condition for {prev_service} → {current_service}: e.g. > 10",
-                        parent=self
+                    condition = simpledialog.askstring("Condition", f"Define condition (e.g. > 10):", parent=self)
+                    if not condition:
+                        messagebox.showwarning("Missing Condition", "No condition defined. Skipping.")
+                        return
+                    category, rtype, desc = "conditional", "condition", "Conditional execution"
+                    rel = Relationship(
+                        name=f"{prev_service.name}_to_{current_service.name}",
+                        category=category,
+                        type=rtype,
+                        description=desc,
+                        src=prev_service,
+                        dst=current_service,
+                        condition=condition
                     )
-                    if condition:
-                        self.condition_based_relationships.append((prev_service, current_service, condition))
                 else:
                     messagebox.showwarning("Invalid Input", "Unknown relationship type. Defaulting to ordered.")
-                    self.ordered_relationships.append((prev_service, current_service))
+                    category, rtype, desc = "order", "ordered", "Default ordered"
 
-                # Optional: warn if no relationship exists in context ->>>>>>>>>>>>>>>>>>>> TODO
-                if not self.check_relationship_exists(prev_service, current_service):
-                    messagebox.showwarning("Missing Relationship", f"No defined relationship between {prev_service} and {current_service}")
+                if rel_type in ["1", "2"]:
+                    rel = Relationship(
+                        name=f"{prev_service.name}_to_{current_service.name}",
+                        category=category,
+                        type=rtype,
+                        description=desc,
+                        src=prev_service,
+                        dst=current_service
+                    )
 
-    def check_relationship_exists(self, src, dst):
-        for rel in self.context.get_relationships():
-            if rel.src == src and rel.dst == dst:
-                return True
-        return False
+                self.relationships.append(rel)
 
     def clear_editor(self):
         for widget in self.composition_frame.winfo_children():
             widget.destroy()
         self.composition_widgets.clear()
-        self.ordered_relationships.clear()
-        self.order_based_relationships.clear()
-        self.condition_based_relationships.clear()
+        self.relationships.clear()
 
     def finalize_app(self):
         if not self.composition_widgets:
@@ -124,20 +123,26 @@ class AppEditor(tk.Toplevel):
         if not name:
             return
 
-        services = self.composition_widgets.copy()
-        # For now, just combine all relationship types for mockup
-        relationships = self.ordered_relationships + self.order_based_relationships + self.condition_based_relationships
-        new_app = IoTApp(name, services, relationships) # -> questo NO, creare un altra classe che gestisce questo
+        new_app = IoTApp.from_data(name, self.composition_widgets, self.relationships)
         self.on_finalize(new_app)
         self.destroy()
 
 
 def create_apps_tab(master, context):
-    frame = tk.Frame(master)
-    apps_listbox = tk.Listbox(frame)
-    apps_listbox.pack(fill=tk.BOTH, expand=True)
+    frame = tk.Frame(master, bg="#f0f0f0")
 
-    apps = []  # List of finalized apps
+    apps = []
+    apps_listbox = tk.Listbox(frame, bg="white", fg="black", font=("Arial", 10), relief=tk.FLAT)
+    list_scroll = ttk.Scrollbar(frame, command=apps_listbox.yview)
+    apps_listbox.config(yscrollcommand=list_scroll.set)
+    apps_listbox.pack(side=tk.LEFT, fill=tk.Y, padx=(10, 0), pady=10)
+    list_scroll.pack(side=tk.LEFT, fill=tk.Y, pady=10)
+
+    detail_text = tk.Text(frame, bg="white", fg="black", font=("Consolas", 10), relief=tk.FLAT)
+    detail_scroll = ttk.Scrollbar(frame, command=detail_text.yview)
+    detail_text.config(yscrollcommand=detail_scroll.set)
+    detail_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5, 0), pady=10)
+    detail_scroll.pack(side=tk.LEFT, fill=tk.Y, pady=10)
 
     def on_finalize_app(app):
         apps.append(app)
@@ -155,13 +160,22 @@ def create_apps_tab(master, context):
     def start_new_app():
         AppEditor(master, context, on_finalize_app)
 
-    buttons_frame = tk.Frame(frame)
-    buttons_frame.pack(pady=10)
+    def show_app_details(event):
+        selection = apps_listbox.curselection()
+        if not selection:
+            return
+        index = selection[0]
+        app = apps[index]
+        detail_text.delete(1.0, tk.END)
+        detail_text.insert(tk.END, "📄 Human-Readable Representation:\n\n")
+        detail_text.insert(tk.END, app.__repr__())
 
-    upload_btn = tk.Button(buttons_frame, text="Upload Existing App", command=upload_app)
-    upload_btn.pack(side=tk.LEFT, padx=5)
+    apps_listbox.bind("<<ListboxSelect>>", show_app_details)
 
-    new_btn = tk.Button(buttons_frame, text="Start New App", command=start_new_app)
-    new_btn.pack(side=tk.LEFT, padx=5)
+    buttons_frame = tk.Frame(frame, bg="#f0f0f0")
+    buttons_frame.pack(side=tk.BOTTOM, pady=10, fill=tk.X)
+
+    ttk.Button(buttons_frame, text="📂 Upload Existing App", command=upload_app).pack(side=tk.LEFT, padx=10)
+    ttk.Button(buttons_frame, text="✨ Start New App", command=start_new_app).pack(side=tk.LEFT, padx=10)
 
     return frame

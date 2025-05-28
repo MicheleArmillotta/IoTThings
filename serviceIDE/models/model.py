@@ -40,15 +40,15 @@ class Thing:
 
 @dataclass
 class Relationship:
-    thing_id: str
-    space_id: str
     name: str
-    owner: str
     category: str
     type: str
     description: str
     src: str
     dst: str
+    thing_id: Optional[str] = None
+    space_id: Optional[str] = None
+    owner: Optional[str] = None
     condition: Optional[str] = None
 
 class IoTContext:
@@ -198,3 +198,57 @@ class IoTContext:
         return None
        """ 
     
+
+class IoTApp:
+    def __init__(self, name):
+        self.name = name
+        self.services = []  # list of Service objects
+        self.relationships = []  # ordered list of Relationship objects
+
+    def add_service(self, service: Service):
+        if service not in self.services:
+            self.services.append(service)
+
+    def add_relationship_obj(self, relationship: Relationship):
+        if relationship.src not in self.services or relationship.dst not in self.services:
+            raise ValueError("Both services must be in the app before adding the relationship.")
+        self.relationships.append(relationship)
+
+    def get_services(self):
+        return self.services
+
+    def get_relationships(self):
+        return self.relationships
+    
+    def get_ordered_services(self):
+        if not self.relationships:
+            return []
+
+        sequence = [self.relationships[0].src]
+        for rel in self.relationships:
+            sequence.append(rel.dst)
+        return sequence
+
+
+    def __repr__(self):
+        lines = [f"IoTApp(name={self.name})"]
+        if not self.relationships:
+            lines.append("  (no relationships)")
+            return "\n".join(lines)
+
+        for rel in self.relationships:
+            lines.append(f"  {rel.src.name} -[{rel.type}]-> {rel.dst.name}")
+        return "\n".join(lines)
+
+    @classmethod
+    def from_data(cls, name, services: list, relationships: list):
+        """
+        Crea un IoTApp da una lista di oggetti Service e Relationship.
+        La lista di relationship è assunta ordinata.
+        """
+        app = cls(name)
+        for s in services:
+            app.add_service(s)
+        for rel in relationships:
+            app.add_relationship_obj(rel)
+        return app
