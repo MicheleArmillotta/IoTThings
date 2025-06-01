@@ -3,7 +3,7 @@ from tkinter import ttk
 from gui.tabs.things_tab import create_things_tab
 from gui.tabs.services_tab import create_services_tab
 from gui.tabs.relationship_tab import create_relationships_tab
-from gui.tabs.apps_tab import create_apps_tab
+from gui.tabs.apps_tab_mod import create_apps_tab
 import tkinter as tk
 from tkinter import ttk
 

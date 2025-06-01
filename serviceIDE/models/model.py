@@ -231,14 +231,21 @@ class IoTApp:
 
 
     def __repr__(self):
-        lines = [f"IoTApp(name={self.name})"]
+        lines = [f"📱 IoT Application: '{self.name}'"]
+
         if not self.relationships:
-            lines.append("  (no relationships)")
+            lines.append("  ⚠️ No relationships defined.")
             return "\n".join(lines)
 
+        lines.append("🔗 Relationships:")
         for rel in self.relationships:
-            lines.append(f"  {rel.src.name} -[{rel.type}]-> {rel.dst.name}")
+            rel_line = f"  • {rel.src.name} ──[{rel.type}]──▶ {rel.dst.name}"
+            if rel.type == "condition" and hasattr(rel, 'condition'):
+                rel_line += f"  (Condition: '{rel.condition}')"
+            lines.append(rel_line)
+
         return "\n".join(lines)
+
 
     @classmethod
     def from_data(cls, name, services: list, relationships: list):
