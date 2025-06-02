@@ -4,6 +4,7 @@ import tkinter as tk
 import math
 import uuid
 from models.model import IoTApp, Relationship
+from service_discover.api_caller import invoke_iot_app
 
 class NodeGraph:
     """Rappresenta un nodo nel canvas con tutte le sue proprietà"""
@@ -689,7 +690,6 @@ def create_apps_tab(master, context):
         apps_listbox.selection_clear(0, tk.END)
         update_apps_list()
 
-
     def update_apps_list():
         apps_listbox.delete(0, tk.END)
         for app in apps:
@@ -712,11 +712,21 @@ def create_apps_tab(master, context):
         detail_text.delete(1.0, tk.END)
         detail_text.insert(tk.END, "📄 Human-Readable Representation:\n\n")
         detail_text.insert(tk.END, app.__repr__())
-        edit_button.pack(side=tk.LEFT, padx=10)  # Show the edit button
+        
+        # Mostra i bottoni se non sono già visibili
+        if not edit_button.winfo_ismapped():
+            edit_button.pack(side=tk.LEFT, padx=10)
+        if not run_button.winfo_ismapped():
+            run_button.pack(side=tk.LEFT, padx=10)
 
     def edit_selected_app():
         if selected_app[0]:
             GraphicalAppEditor(master, context, on_finalize_app, existing_app=selected_app[0])
+
+    def run_selected_app():
+        if selected_app[0]:
+            #from api_caller import invoke_iot_app  # Import here to avoid circular imports
+            invoke_iot_app(selected_app[0])
 
     apps_listbox.bind("<<ListboxSelect>>", show_app_details)
 
@@ -728,5 +738,11 @@ def create_apps_tab(master, context):
 
     # Bottone "Edit App" inizialmente nascosto
     edit_button = ttk.Button(buttons_frame, text="✏️ Edit App", command=edit_selected_app)
+    run_button = ttk.Button(buttons_frame, text="▶️ Run App", command=run_selected_app)
+
+        # Inizialmente nascosti
+    edit_button.pack_forget()
+    run_button.pack_forget()
 
     return frame
+

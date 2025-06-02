@@ -6,6 +6,7 @@ import customtkinter as ctk
 # Import the GraphicalAppEditor
 from gui.app_editor.graphical_app_editor import GraphicalAppEditor
 from models.model import IoTApp # Assuming IoTApp is here
+from service_discover.api_caller import invoke_iot_app
 
 
 def create_apps_tab(master, context):
@@ -50,6 +51,7 @@ def create_apps_tab(master, context):
         detail_text.insert(tk.END, "📄 Human-Readable Representation:\n\n")
         detail_text.insert(tk.END, app_to_display.__repr__())
         edit_button.pack(side=tk.LEFT, padx=10) # Show the edit button
+        run_button.pack(side=tk.LEFT, padx=10)
 
     def show_app_details_from_listbox(event):
         selection = apps_listbox.curselection()
@@ -72,6 +74,11 @@ def create_apps_tab(master, context):
         if selected_app[0]:
             GraphicalAppEditor(master, context, on_finalize_app, existing_app=selected_app[0])
 
+    def run_selected_app():
+        if selected_app[0]:
+            #from api_caller import invoke_iot_app  # Import here to avoid circular imports
+            invoke_iot_app(selected_app[0])
+
     apps_listbox.bind("<<ListboxSelect>>", show_app_details_from_listbox)
 
     buttons_frame = tk.Frame(frame, bg="#f0f0f0")
@@ -82,5 +89,6 @@ def create_apps_tab(master, context):
 
     # Bottone "Edit App" inizialmente nascosto
     edit_button = ttk.Button(buttons_frame, text="✏️ Edit App", command=edit_selected_app)
+    run_button = ttk.Button(buttons_frame, text="▶️ Run App", command=run_selected_app)
 
     return frame

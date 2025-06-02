@@ -30,6 +30,10 @@ class TweetListener(threading.Thread):
         mreq = struct.pack("4s4s", socket.inet_aton(self.multicast_group), socket.inet_aton(local_ip))
         self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
+        # Join group on localhost interface
+        #mreq = socket.inet_aton(self.multicast_group) + socket.inet_aton("127.0.0.1")
+        #self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)    FORSE FUNZIONA ANCHE SENZA QUESTI
+
     def run(self):
         print("[Listener] Starting tweet listener on multicast group...")
         while self.running:

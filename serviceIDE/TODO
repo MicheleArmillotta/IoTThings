@@ -1,6 +1,5 @@
 1. aggiungere controllo su relationship che arrivano dal rasp 
-2. rendere l'app piu bella
-3. fare i test
-
 
 4. continuare con save, upload ecc
+
+5. ricordarsi di capire come vengono mandati i nomi delle condizioni dal raspberry e aggiungere il controllo sulle condizioni inviate!!
