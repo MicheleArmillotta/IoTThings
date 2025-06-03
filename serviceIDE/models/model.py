@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 import socket
 
 @dataclass
@@ -13,6 +13,7 @@ class Service:
     app_category: str
     description: str
     keywords: str
+    input: bool # da modificare se volgiamo un controllo sui tipi !!!!!!!!!!!!!!
 
 @dataclass
 class Entity:
@@ -103,18 +104,29 @@ class IoTContext:
                 )
                 
                 if not service_exists:
+                    # Estrai il valore tra parentesi quadre
+                    input_section = None
+                    try:
+                        input_section = api.split('[')[1].split(']')[0].strip()
+                    except IndexError:
+                        input_section = "NULL"
+
+                    input_required = input_section.upper() != "NULL"
+
                     service = Service(
                         name=service_name,
-                        thing_name=self.things[thing_id].name,
+                        thing_name=self.things[thing_id].id,
                         entity_id=entity_id,
                         space_id=space_id,
                         api=api,
                         type=type_,
                         app_category=app_category,
                         description=description,
-                        keywords=keywords
+                        keywords=keywords,
+                        input=input_required
                     )
                     entity_found.services.append(service)
+
                  
     def add_entity_to_thing(self, thing_id: str, entity_name: str, entity_id: str, space_id: str, type_: str, vendor: str, description: str, owner: str):
         """Aggiunge un'entità a un thing solo se non esiste già"""
@@ -210,7 +222,8 @@ class IoTApp:
             self.services.append(service)
 
     def add_relationship_obj(self, relationship: Relationship):
-        if relationship.src not in self.services or relationship.dst not in self.services:
+        service_names = {s.name for s in self.services}
+        if relationship.src not in service_names or relationship.dst not in service_names:
             raise ValueError("Both services must be in the app before adding the relationship.")
         self.relationships.append(relationship)
 
@@ -239,7 +252,7 @@ class IoTApp:
 
         lines.append("🔗 Relationships:")
         for rel in self.relationships:
-            rel_line = f"  • {rel.src.name} ──[{rel.type}]──▶ {rel.dst.name}"
+            rel_line = f"  • {rel.src} ──[{rel.type}]──▶ {rel.dst}"
             if rel.type == "condition" and hasattr(rel, 'condition'):
                 rel_line += f"  (Condition: '{rel.condition}')"
             lines.append(rel_line)
@@ -248,7 +261,7 @@ class IoTApp:
 
 
     @classmethod
-    def from_data(cls, name, services: list, relationships: list):
+    def from_data(cls, name, services: list[Service], relationships: list[Relationship]):
         """
         Crea un IoTApp da una lista di oggetti Service e Relationship.
         La lista di relationship è assunta ordinata.

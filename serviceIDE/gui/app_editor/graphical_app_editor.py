@@ -302,6 +302,8 @@ class GraphicalAppEditor(ctk.CTkToplevel):
         services = [node.service for node in nodes]
         relationship_objects = [rel.relationship_obj for rel in relationships]
 
+
+
         if self.existing_app:
             app = IoTApp.from_data(self.existing_app.name, services, relationship_objects)
         else:

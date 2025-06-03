@@ -86,8 +86,8 @@ class RelationshipDialog(ctk.CTkToplevel):
             category=self._get_relationship_category(rel_type),
             type=rel_type,
             description=condition if condition else rel_type,
-            src=self.src_node.service,
-            dst=self.dst_node.service,
+            src=self.src_node.service.name,
+            dst=self.dst_node.service.name,
             condition=condition
         )
 

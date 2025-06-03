@@ -39,24 +39,35 @@ def evaluate_condition(response: Any, condition: str) -> bool:
         return False
 
 
+import json
+import socket
+
 def call_api(service):
     print(f"[API] Calling service: {service.name} with API: {service.api}")
     
-    # Supponiamo l'API sia invocabile tramite UDP su IP fisso (0.0.0.0 es. dummy, usa quello reale del servizio nella tua LAN)
-    IP = "232.1.1.1"  # Sostituisci con l’IP del servizio reale sulla LAN
-    PORT = 1235      # Oppure estrai da un campo apposito se disponibile
+    IP = "232.1.1.1"  # Sostituisci con l’IP reale del servizio sulla tua LAN
+    PORT = 1235
 
-    message = service.api.encode()
+    if service.inputs is not None:
+        service_inputs = service.inputs # -> da mettere come una lista di stringhe tra parentesi
+
+    message = {
+        "Tweet Type": "Service Call",
+        "Thing id": service.thing_name,
+        "Space ID": service.space_id,
+        "Service Name": service.name,
+        "Service Inputs": service_inputs
+    }
 
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.sendto(message, (IP, PORT))
+            s.sendto(json.dumps(message).encode(), (IP, PORT))
             s.settimeout(2.0)
             data, _ = s.recvfrom(1024)
             response = data.decode().strip()
             print(f"[API RESPONSE] {response}")
             try:
-                return int(response)  # Assume risposta numerica
+                return int(response)
             except:
                 return response
     except socket.timeout:
@@ -66,6 +77,7 @@ def call_api(service):
         print(f"[ERROR] Calling {service.name}: {e}")
         return None
 
+
 # 🧠 Invoca i servizi secondo le relazioni
 def invoke_iot_app(app):
     print(f"[APP] Invoking IoT App: {app.name}")
@@ -73,12 +85,14 @@ def invoke_iot_app(app):
     service_map = {s.name: s for s in app.services}
 
     for rel in app.relationships:
+        
         src = rel.src
         dst = rel.dst
         rel_type = rel.type.lower()
+        print(f"[DEBUG] rel.src: {rel.src} ({type(rel.src)}), rel.dst: {rel.dst} ({type(rel.dst)})")
 
-        src_service = service_map.src
-        dst_service = service_map.dst
+        src_service = service_map.get(src)
+        dst_service = service_map.get(dst)
 
         if not src_service or not dst_service:
             print(f"[WARNING] Missing service(s): {src} or {dst}")
