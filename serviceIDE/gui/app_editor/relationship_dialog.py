@@ -71,9 +71,9 @@ class RelationshipDialog(ctk.CTkToplevel):
             return
 
         if (rel_type == "condition" and condition and
-            not any(condition.startswith(op) for op in ["<", ">", "=", "<=", ">=", "!="])):
+            not any(condition.startswith(op) for op in ["<", ">", "==", "<=", ">=", "!="])):
             messagebox.showerror("Errore",
-                               "La condizione deve iniziare con uno tra <, >, =, <=, >=, !=", parent=self)
+                               "La condizione deve iniziare con uno tra <, >, ==, <=, >=, !=", parent=self)
             return
 
         # Increment the counter and get its value

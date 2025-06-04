@@ -82,6 +82,9 @@ def create_apps_tab(master, context):
     def edit_selected_app():
         if selected_app[0]:
             GraphicalAppEditor(master, context, on_finalize_app, existing_app=selected_app[0])
+            update_apps_list()
+            detail_text.delete(1.0, tk.END)
+            selected_app[0] = None
 
     def run_selected_app():
         if selected_app[0]:
@@ -108,6 +111,9 @@ def create_apps_tab(master, context):
 
     return frame
 
+
+
+
 def write_to_prompt(prompt_widget, text):
     """Helper function to write text to prompt widget and scroll to end"""
     prompt_widget.config(state="normal")
@@ -115,6 +121,7 @@ def write_to_prompt(prompt_widget, text):
     prompt_widget.see(tk.END)
     prompt_widget.update()
     prompt_widget.config(state="normal")
+    
 def get_user_input(prompt_widget, message):
     # Abilita il prompt per l'input
     prompt_widget.config(state="disabled")
