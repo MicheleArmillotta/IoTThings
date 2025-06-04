@@ -116,8 +116,8 @@ class GraphicalAppEditor(ctk.CTkToplevel):
             svc_to_node[svc.name] = node
 
         for rel in app.relationships:
-            src_node = svc_to_node.get(rel.src.name)
-            dst_node = svc_to_node.get(rel.dst.name)
+            src_node = svc_to_node.get(rel.src)
+            dst_node = svc_to_node.get(rel.dst)
             if src_node and dst_node:
                 # Re-crea la RelationshipGraph con l'oggetto Relationship del modello
                 self.app_canvas.add_relationship(
