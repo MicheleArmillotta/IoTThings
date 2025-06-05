@@ -1,9 +1,12 @@
 # gui/components/app_canvas.py
 import tkinter as tk
 import math
-
+import os
+import json
+from tkinter import messagebox
 from gui.app_editor.node_graph import NodeGraph
 from gui.app_editor.relationship_graph import RelationshipGraph
+
 
 class AppCanvas(tk.Canvas):
     def __init__(self, master=None, **kwargs):
@@ -245,3 +248,38 @@ class AppCanvas(tk.Canvas):
         self.nodes.clear()
         self.relationships.clear()
         self.selected_nodes.clear()
+
+
+    def save_graphical_app_editor(self, name):
+        services = [node.service for node in self.nodes]
+        relationships = [edge.relationship_obj for edge in self.relationships]
+        config_path = os.path.join(os.path.dirname(__file__), "../tabs/workdir_path")
+        if os.path.exists(config_path):
+            with open(config_path, "r") as f:
+                path = f.read().strip()
+                if os.path.isdir(path):
+                    workdir = path
+
+        try:
+        
+            filename = os.path.join(workdir, f"{name}.iot")
+
+            if os.path.exists(filename):
+                confirm = messagebox.askyesno("File Exists",
+                                            f"A file named '{name}.iot' already exists.\nDo you want to overwrite it?")
+                if not confirm:
+                    messagebox.showinfo("Cancelled", "Save cancelled by user.")
+                    return
+
+            app_data = {
+                "name": name,
+                "services": [service.__dict__ for service in services],
+                "relationships": [rel.__dict__ for rel in relationships]
+            }
+
+            with open(filename, "w") as f:
+                json.dump(app_data, f, indent=4)
+
+                messagebox.showinfo("Success", f"App saved to {filename}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save app: {e}")

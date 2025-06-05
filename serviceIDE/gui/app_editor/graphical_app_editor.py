@@ -8,6 +8,9 @@ from gui.app_editor.node_graph import NodeGraph
 from gui.app_editor.relationship_graph import RelationshipGraph
 from gui.app_editor.relationship_dialog import RelationshipDialog
 from models.model import IoTApp, Relationship # Assuming IoTApp and Relationship are here
+from customtkinter import CTkInputDialog
+from tkinter.messagebox import showinfo
+
 
 
 class GraphicalAppEditor(ctk.CTkToplevel):
@@ -80,6 +83,13 @@ class GraphicalAppEditor(ctk.CTkToplevel):
                      command=self.show_relationship_order_preview).pack(side="left", padx=5)
         ctk.CTkButton(button_frame, text="✅ Finalize",
                      command=self.finalize_app).pack(side="right", padx=5)
+        
+        save_button = ctk.CTkButton(
+        button_frame,  # oppure self se non hai una toolbar
+        text="Salva",
+        command=self.handle_save
+        )
+        save_button.pack(side="left", padx=10)
 
     def _draw_legend(self):
         """Disegna la legenda delle relazioni (rimane qui come elemento UI)"""
@@ -314,3 +324,11 @@ class GraphicalAppEditor(ctk.CTkToplevel):
 
         self.on_finalize(app)
         self.destroy()
+
+
+    def handle_save(self):
+        dialog = ctk.CTkInputDialog(text="Inserisci il nome del progetto:", title="Salva progetto")
+        name = dialog.get_input()
+        if name:
+            self.app_canvas.save_graphical_app_editor(name)
+            showinfo("Salvataggio completato", f"Progetto '{name}' salvato con successo.")

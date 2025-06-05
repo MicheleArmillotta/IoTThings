@@ -2,16 +2,28 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
 import customtkinter as ctk
-
+import os
+import json
+from tkinter import filedialog
+from models.model import Service, Relationship
 # Import the GraphicalAppEditor
 from gui.app_editor.graphical_app_editor import GraphicalAppEditor
 from models.model import IoTApp # Assuming IoTApp is here
 from service_discover.api_caller import invoke_iot_app
 
+def read_workdir_from_file():
+    config_path = os.path.join(os.path.dirname(__file__), "workdir_path")
+    if os.path.exists(config_path):
+        with open(config_path, "r") as f:
+            path = f.read().strip()
+            if os.path.isdir(path):
+                return path
+    return os.getcwd()
 
 def create_apps_tab(master, context):
     frame = tk.Frame(master, bg="#f0f0f0")
-
+    initial_dir = read_workdir_from_file()
+    workdir = [initial_dir] 
     apps = []
     selected_app = [None]
     apps_listbox = tk.Listbox(frame, bg="white", fg="black", font=("Arial", 10), relief=tk.FLAT)
@@ -62,6 +74,7 @@ def create_apps_tab(master, context):
         detail_text.insert(tk.END, app_to_display.__repr__())
         edit_button.pack(side=tk.LEFT, padx=10)
         run_button.pack(side=tk.LEFT, padx=10)
+        save_button.pack(side=tk.LEFT, padx=10)
 
     def show_app_details_from_listbox(event):
         selection = apps_listbox.curselection()
@@ -71,10 +84,6 @@ def create_apps_tab(master, context):
         app = apps[index]
         selected_app[0] = app
         display_app_details(app)
-
-    def upload_app():
-        messagebox.showinfo("Upload", "This would open a file dialog to load an app.")
-        GraphicalAppEditor(master, context, on_finalize_app)
 
     def start_new_app():
         GraphicalAppEditor(master, context, on_finalize_app, existing_app=None)
@@ -103,11 +112,19 @@ def create_apps_tab(master, context):
     buttons_frame = tk.Frame(frame, bg="#f0f0f0")
     buttons_frame.pack(side=tk.BOTTOM, pady=10, fill=tk.X)
 
-    ttk.Button(buttons_frame, text="📂 Upload Existing App", command=upload_app).pack(side=tk.LEFT, padx=10)
+    ttk.Button(buttons_frame, text="📂 Upload Existing App", command=lambda: upload_app(workdir[0], on_finalize_app)).pack(side=tk.LEFT, padx=10)
     ttk.Button(buttons_frame, text="✨ Start New App", command=start_new_app).pack(side=tk.LEFT, padx=10)
 
     edit_button = ttk.Button(buttons_frame, text="✏️ Edit App", command=edit_selected_app)
     run_button = ttk.Button(buttons_frame, text="▶️ Run App", command=run_selected_app)
+    save_button = ttk.Button(buttons_frame, text="💾 Save App", command=lambda: save_selected_app(selected_app[0], workdir[0]))
+    set_workdir_button = ttk.Button(buttons_frame, text="📁 Set Workdir", command=lambda: choose_workdir(workdir))
+
+    # Di default nascosti
+    edit_button.pack_forget()
+    run_button.pack_forget()
+    save_button.pack_forget()
+    set_workdir_button.pack(side=tk.RIGHT, padx=10)
 
     return frame
 
@@ -156,3 +173,126 @@ def get_user_input(prompt_widget, message):
     prompt_widget.config(state="disabled")
 
     return user_input[0] if user_input[0] is not None else ""
+
+
+
+def choose_workdir(workdir_ref):
+    """Apre il file dialog per scegliere la working directory"""
+    new_dir = filedialog.askdirectory(title="Select Working Directory")
+    if new_dir:
+        workdir_ref[0] = new_dir
+        print(f"[INFO] Working directory set to: {new_dir}")
+
+        # Salva il nuovo path nel file di config
+        config_path = os.path.join(os.path.dirname(__file__), "workdir_path")
+        with open(config_path, "w") as f:
+            f.write(new_dir)
+
+
+def save_selected_app(app, workdir_path):
+    if not app:
+        messagebox.showwarning("No App Selected", "Please select an app to save.")
+        return
+
+    try:
+        filename = os.path.join(workdir_path, f"{app.name}.iot")
+
+        if os.path.exists(filename):
+            confirm = messagebox.askyesno("File Exists",
+                                          f"A file named '{app.name}.iot' already exists.\nDo you want to overwrite it?")
+            if not confirm:
+                messagebox.showinfo("Cancelled", "Save cancelled by user.")
+                return
+
+        app_data = {
+            "name": app.name,
+            "services": [service.__dict__ for service in app.services],
+            "relationships": [rel.__dict__ for rel in app.relationships]
+        }
+
+        with open(filename, "w") as f:
+            json.dump(app_data, f, indent=4)
+
+        messagebox.showinfo("Success", f"App saved to {filename}")
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to save app: {e}")
+
+
+
+def upload_app(workdir_path, on_finalize_app):
+    def load_and_finalize(filename):
+        full_path = os.path.join(workdir_path, filename)
+        try:
+            with open(full_path, "r") as f:
+                data = json.load(f)
+
+            # Assumiamo che Service e Relationship siano classi con un costruttore da dizionario
+            services = []
+            for s in data.get("services", []):
+                service = Service(
+                    name=s.get("name"),
+                    thing_name=s.get("thing_name"),
+                    entity_id=s.get("entity_id"),
+                    space_id=s.get("space_id"),
+                    api=s.get("api"),
+                    type=s.get("type"),
+                    app_category=s.get("app_category"),
+                    description=s.get("description"),
+                    keywords=s.get("keywords"),
+                    input=s.get("input")
+                )
+                services.append(service)
+
+            # Caricamento delle relazioni
+            relationships = []
+            for r in data.get("relationships", []):
+                rel = Relationship(
+                    type=r.get("type"),
+                    src=r.get("src"),
+                    dst=r.get("dst"),
+                    condition=r.get("condition"),
+                    thing_id=r.get("thing_id"),
+                    space_id=r.get("space_id"),
+                    name=r.get("name"),
+                    owner=r.get("owner"),
+                    category=r.get("category"),
+                    description=r.get("description")
+                )
+            relationships.append(rel)
+            name = data.get("name", os.path.splitext(filename)[0])
+
+            app = IoTApp.from_data(name, services, relationships)
+            on_finalize_app(app)
+            messagebox.showinfo("Upload Successful", f"App '{name}' uploaded successfully.")
+            popup.destroy()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load app: {e}")
+
+    # Trova i file .iot nella workdir
+    app_files = [f for f in os.listdir(workdir_path) if f.endswith(".iot")]
+
+    if not app_files:
+        messagebox.showinfo("No Apps Found", "No .iot apps found in the working directory.")
+        return
+
+    # Crea popup
+    popup = ctk.CTkToplevel()
+    popup.title("Upload IoT App")
+    popup.geometry("400x200")
+
+    label = ctk.CTkLabel(popup, text="Select an App to Upload", font=("Arial", 16))
+    label.pack(pady=20)
+
+    combo = ctk.CTkComboBox(popup, values=app_files, width=300)
+    combo.pack(pady=10)
+
+    def on_upload():
+        selected = combo.get()
+        if selected:
+            load_and_finalize(selected)
+        else:
+            messagebox.showwarning("No Selection", "Please select an app file.")
+
+    upload_btn = ctk.CTkButton(popup, text="Upload", command=on_upload)
+    upload_btn.pack(pady=20)
