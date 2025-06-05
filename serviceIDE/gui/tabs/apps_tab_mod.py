@@ -26,6 +26,7 @@ def create_apps_tab(master, context):
     workdir = [initial_dir] 
     apps = []
     selected_app = [None]
+    display_app = [None]
     apps_listbox = tk.Listbox(frame, bg="white", fg="black", font=("Arial", 10), relief=tk.FLAT)
     list_scroll = ttk.Scrollbar(frame, command=apps_listbox.yview)
     apps_listbox.config(yscrollcommand=list_scroll.set)
@@ -72,9 +73,18 @@ def create_apps_tab(master, context):
         detail_text.delete(1.0, tk.END)
         detail_text.insert(tk.END, "📄 Human-Readable Representation:\n\n")
         detail_text.insert(tk.END, app_to_display.__repr__())
+        display_app.append(app_to_display.name)
         edit_button.pack(side=tk.LEFT, padx=10)
         run_button.pack(side=tk.LEFT, padx=10)
         save_button.pack(side=tk.LEFT, padx=10)
+
+    def elimnate_display():
+        detail_text.delete(1.0, tk.END)
+        detail_text.insert(tk.END, "")
+        display_app[0] = None
+        edit_button.pack_forget()
+        run_button.pack_forget()
+        save_button.pack_forget()
 
     def show_app_details_from_listbox(event):
         selection = apps_listbox.curselection()
@@ -112,7 +122,7 @@ def create_apps_tab(master, context):
     buttons_frame = tk.Frame(frame, bg="#f0f0f0")
     buttons_frame.pack(side=tk.BOTTOM, pady=10, fill=tk.X)
 
-    ttk.Button(buttons_frame, text="📂 Upload Existing App", command=lambda: upload_app(workdir[0], on_finalize_app)).pack(side=tk.LEFT, padx=10)
+    ttk.Button(buttons_frame, text="📂 Explore saved App", command=lambda: upload_app(workdir[0], on_finalize_app,apps, update_apps_list, display_app,elimnate_display)).pack(side=tk.LEFT, padx=10)
     ttk.Button(buttons_frame, text="✨ Start New App", command=start_new_app).pack(side=tk.LEFT, padx=10)
 
     edit_button = ttk.Button(buttons_frame, text="✏️ Edit App", command=edit_selected_app)
@@ -219,14 +229,13 @@ def save_selected_app(app, workdir_path):
 
 
 
-def upload_app(workdir_path, on_finalize_app):
+def upload_app(workdir_path, on_finalize_app, current_apps: list, update_app_list,display_app, eliminate_display):
     def load_and_finalize(filename):
         full_path = os.path.join(workdir_path, filename)
         try:
             with open(full_path, "r") as f:
                 data = json.load(f)
 
-            # Assumiamo che Service e Relationship siano classi con un costruttore da dizionario
             services = []
             for s in data.get("services", []):
                 service = Service(
@@ -243,7 +252,6 @@ def upload_app(workdir_path, on_finalize_app):
                 )
                 services.append(service)
 
-            # Caricamento delle relazioni
             relationships = []
             for r in data.get("relationships", []):
                 rel = Relationship(
@@ -258,8 +266,14 @@ def upload_app(workdir_path, on_finalize_app):
                     category=r.get("category"),
                     description=r.get("description")
                 )
-            relationships.append(rel)
+                relationships.append(rel)
+
             name = data.get("name", os.path.splitext(filename)[0])
+
+            # Blocca se già esiste
+            if any(app.name == name for app in current_apps):
+                messagebox.showwarning("App Already Uploaded", f"The app '{name}' is already uploaded.")
+                return
 
             app = IoTApp.from_data(name, services, relationships)
             on_finalize_app(app)
@@ -268,6 +282,33 @@ def upload_app(workdir_path, on_finalize_app):
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load app: {e}")
+
+    def delete_selected_app():
+        selected = combo.get()
+        if not selected:
+            messagebox.showwarning("No Selection", "Please select an app file to delete.")
+            return
+
+        full_path = os.path.join(workdir_path, selected)
+        confirm = messagebox.askyesno("Confirm Deletion", f"Are you sure you want to delete '{selected}'?")
+        if confirm:
+            try:
+                os.remove(full_path)
+                app_name = os.path.splitext(selected)[0]
+                # Rimuovi da lista corrente
+                for app in current_apps:
+                    if app.name == app_name:
+                        current_apps.remove(app)
+                        
+                        if display_app[0] == app_name:
+                            display_app[0] = None
+                            eliminate_display()
+                        update_app_list()
+                        break
+                messagebox.showinfo("Deleted", f"App '{selected}' deleted.")
+                popup.destroy()
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to delete app: {e}")
 
     # Trova i file .iot nella workdir
     app_files = [f for f in os.listdir(workdir_path) if f.endswith(".iot")]
@@ -279,20 +320,19 @@ def upload_app(workdir_path, on_finalize_app):
     # Crea popup
     popup = ctk.CTkToplevel()
     popup.title("Upload IoT App")
-    popup.geometry("400x200")
+    popup.geometry("400x250")
 
-    label = ctk.CTkLabel(popup, text="Select an App to Upload", font=("Arial", 16))
-    label.pack(pady=20)
+    label = ctk.CTkLabel(popup, text="Select an App to Upload or Delete", font=("Arial", 16))
+    label.pack(pady=10)
 
     combo = ctk.CTkComboBox(popup, values=app_files, width=300)
     combo.pack(pady=10)
 
-    def on_upload():
-        selected = combo.get()
-        if selected:
-            load_and_finalize(selected)
-        else:
-            messagebox.showwarning("No Selection", "Please select an app file.")
+    button_frame = ctk.CTkFrame(popup)
+    button_frame.pack(pady=20)
 
-    upload_btn = ctk.CTkButton(popup, text="Upload", command=on_upload)
-    upload_btn.pack(pady=20)
+    upload_btn = ctk.CTkButton(button_frame, text="Upload", command=lambda: load_and_finalize(combo.get()))
+    upload_btn.pack(side="left", padx=10)
+
+    delete_btn = ctk.CTkButton(button_frame, text="Delete", fg_color="red", command=delete_selected_app)
+    delete_btn.pack(side="left", padx=10)
