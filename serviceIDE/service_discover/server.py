@@ -7,7 +7,7 @@ import struct
 import re
 
 from service_discover.processor import process_tweet
-from models.model import IoTContext
+from models.base_classes import IoTContext
 
 # Code to communicate with the main application
 tweet_queue = queue.Queue()
@@ -25,7 +25,7 @@ class TweetListener(threading.Thread):
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind(('', self.port))
 
-        local_ip = context.local_ip
+        local_ip = IoTContext._get_local_ip()
         mreq = struct.pack("4s4s", socket.inet_aton(self.multicast_group), socket.inet_aton(local_ip))
         self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 

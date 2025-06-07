@@ -1,15 +1,15 @@
 # gui/tabs/apps_tab.py
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import messagebox, ttk,filedialog
 import customtkinter as ctk
 import os
 import json
-from tkinter import filedialog
-from models.model import Service, Relationship
-# Import the GraphicalAppEditor
+from models.base_classes import Service, Relationship
+
 from gui.app_editor.graphical_app_editor import GraphicalAppEditor
-from models.model import IoTApp # Assuming IoTApp is here
+from models.iot_app import IoTApp
 from service_discover.api_caller import invoke_iot_app
+import threading
 
 def read_workdir_from_file():
     config_path = os.path.join(os.path.dirname(__file__), "workdir_path")
@@ -54,7 +54,7 @@ def create_apps_tab(master, context):
 
     def on_finalize_app(app):
         for i, existing_app in enumerate(apps):
-            if existing_app.name == app.name:
+            if existing_app.id == app.id:
                 apps[i] = app
                 break
         else:
@@ -105,17 +105,31 @@ def create_apps_tab(master, context):
             detail_text.delete(1.0, tk.END)
             selected_app[0] = None
 
+    app_thread = [None]  # Per tenere traccia del thread
+    stop_flag = [{"stop": False}]  # Lista per mutabilità
+
     def run_selected_app():
         if selected_app[0]:
             prompt_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(40, 0))
             prompt_text.config(state="normal")
             prompt_text.delete("1.0", tk.END)
             prompt_text.config(state="disabled")
-            # Passa il widget prompt_text (o la funzione write_to_prompt) a invoke_iot_app
-            invoke_iot_app(selected_app[0],  
-                           write_fn=lambda text: write_to_prompt(prompt_text, text),
-                           input_fn=lambda msg: get_user_input(prompt_text, msg))
-            prompt_text.config(state="disabled")
+            stop_flag[0]["stop"] = False  # Reset flag
+
+            def app_runner():
+                invoke_iot_app(
+                    selected_app[0],
+                    write_fn=lambda text: write_to_prompt(prompt_text, text),
+                    input_fn=lambda msg: get_user_input(prompt_text, msg),
+                    stop_flag=stop_flag[0]
+                )
+                prompt_text.config(state="disabled")
+
+            app_thread[0] = threading.Thread(target=app_runner, daemon=True)
+            app_thread[0].start()
+
+    def stop_running_app():
+        stop_flag[0]["stop"] = True
 
     apps_listbox.bind("<<ListboxSelect>>", show_app_details_from_listbox)
 
@@ -127,6 +141,8 @@ def create_apps_tab(master, context):
 
     edit_button = ttk.Button(buttons_frame, text="✏️ Edit App", command=edit_selected_app)
     run_button = ttk.Button(buttons_frame, text="▶️ Run App", command=run_selected_app)
+    stop_button = ttk.Button(buttons_frame, text="⏹️ Stop App", command=stop_running_app)
+    stop_button.pack(side=tk.LEFT, padx=10)
     save_button = ttk.Button(buttons_frame, text="💾 Save App", command=lambda: save_selected_app(selected_app[0], workdir[0]))
     set_workdir_button = ttk.Button(buttons_frame, text="📁 Set Workdir", command=lambda: choose_workdir(workdir))
 
@@ -214,11 +230,7 @@ def save_selected_app(app, workdir_path):
                 messagebox.showinfo("Cancelled", "Save cancelled by user.")
                 return
 
-        app_data = {
-            "name": app.name,
-            "services": [service.__dict__ for service in app.services],
-            "relationships": [rel.__dict__ for rel in app.relationships]
-        }
+        app_data = app.to_dict()
 
         with open(filename, "w") as f:
             json.dump(app_data, f, indent=4)
@@ -234,50 +246,16 @@ def upload_app(workdir_path, on_finalize_app, current_apps: list, update_app_lis
         full_path = os.path.join(workdir_path, filename)
         try:
             with open(full_path, "r") as f:
-                data = json.load(f)
-
-            services = []
-            for s in data.get("services", []):
-                service = Service(
-                    name=s.get("name"),
-                    thing_name=s.get("thing_name"),
-                    entity_id=s.get("entity_id"),
-                    space_id=s.get("space_id"),
-                    api=s.get("api"),
-                    type=s.get("type"),
-                    app_category=s.get("app_category"),
-                    description=s.get("description"),
-                    keywords=s.get("keywords"),
-                    input=s.get("input")
-                )
-                services.append(service)
-
-            relationships = []
-            for r in data.get("relationships", []):
-                rel = Relationship(
-                    type=r.get("type"),
-                    src=r.get("src"),
-                    dst=r.get("dst"),
-                    condition=r.get("condition"),
-                    thing_id=r.get("thing_id"),
-                    space_id=r.get("space_id"),
-                    name=r.get("name"),
-                    owner=r.get("owner"),
-                    category=r.get("category"),
-                    description=r.get("description")
-                )
-                relationships.append(rel)
-
-            name = data.get("name", os.path.splitext(filename)[0])
-
+                app_dict = json.load(f)
+            app = IoTApp.from_dict(app_dict)
             # Blocca se già esiste
-            if any(app.name == name for app in current_apps):
-                messagebox.showwarning("App Already Uploaded", f"The app '{name}' is already uploaded.")
+            print("App id to upload:", app.id)
+            print("Current app ids:", [a.id for a in current_apps])
+            if any(existing_app.id == app.id for existing_app in current_apps):     
+                messagebox.showwarning("App Already Uploaded", f"The app '{app.name}' is already uploaded.")
                 return
-
-            app = IoTApp.from_data(name, services, relationships)
             on_finalize_app(app)
-            messagebox.showinfo("Upload Successful", f"App '{name}' uploaded successfully.")
+            messagebox.showinfo("Upload Successful", f"App '{app.name}' uploaded successfully.")
             popup.destroy()
 
         except Exception as e:
@@ -299,10 +277,8 @@ def upload_app(workdir_path, on_finalize_app, current_apps: list, update_app_lis
                 for app in current_apps:
                     if app.name == app_name:
                         current_apps.remove(app)
-                        
-                        if display_app[0] == app_name:
-                            display_app[0] = None
-                            eliminate_display()
+                       
+                        eliminate_display()
                         update_app_list()
                         break
                 messagebox.showinfo("Deleted", f"App '{selected}' deleted.")

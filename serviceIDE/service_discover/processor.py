@@ -1,48 +1,6 @@
-""""
-from models.tweet import ServiceTweet, RelationshipTweet, IdentityTweet
-
-def process_tweet(data: dict):
-    tweet_type = data.get("Tweet Type")
-
-    if tweet_type == "Service":
-        return ServiceTweet(
-            name=data.get("Name"),
-            thing_id=data.get("Thing ID"),
-            entity_id=data.get("Entity ID"),
-            api=data.get("API"),
-            description=data.get("Description"),
-            keywords=data.get("Keywords")
-        )
-    elif tweet_type == "Relationship":
-        return RelationshipTweet(
-            thing_id=data.get("Thing ID"),
-            name=data.get("Name"),
-            description=data.get("Description"),
-            source_service=data.get("FS name"),
-            target_service=data.get("SS name")
-        )
-    elif tweet_type == "Identity_Entity":
-        return IdentityTweet(
-            thing_id = data.get("Thing ID"),
-            space_id = data.get("Space ID"),
-            name = data.get("Name"),
-            id = data.get("ID"),
-            type = data.get("Type"),
-            owner = data.get("Owner"),
-            vendor = data.get("Vendor"),
-            decription = data.get("Description")
-        )
-
-    else:
-        print("[Processor] Unknown tweet type:", tweet_type)
-        return None
-
-
-"""""
-
 
 import json
-from models.model import IoTContext
+from models.base_classes import IoTContext
 
 def process_tweet(tweet_data: dict, addr,context: IoTContext):
     try:
@@ -73,7 +31,7 @@ def process_tweet(tweet_data: dict, addr,context: IoTContext):
             )
 
         elif tweet_type == "Service":
-            context.add_service_to_Entity(
+            context.add_service_to_entity(
                 thing_id=tweet_data["Thing ID"],
                 service_name=tweet_data["Name"],
                 entity_id=tweet_data["Entity ID"],

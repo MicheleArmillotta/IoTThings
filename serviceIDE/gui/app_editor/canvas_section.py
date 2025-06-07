@@ -6,6 +6,7 @@ import json
 from tkinter import messagebox
 from gui.app_editor.node_graph import NodeGraph
 from gui.app_editor.relationship_graph import RelationshipGraph
+from models.service_instance import ServiceInstance
 
 
 class AppCanvas(tk.Canvas):
@@ -43,6 +44,9 @@ class AppCanvas(tk.Canvas):
                 self.selected_nodes.append(node)
                 node.is_selected = True
                 self.itemconfig(node.canvas_id, outline="red", width=3)
+                
+        if hasattr(self.master, "update_input_panel"):
+            self.master.update_input_panel()
 
     def _on_canvas_drag(self, event):
         """Gestisce il trascinamento dei nodi"""
@@ -84,7 +88,7 @@ class AppCanvas(tk.Canvas):
         )
         text_id = self.create_text(
             x + 100 // 2, y + 60 // 2,
-            text=service.name, tags="node"
+            text=service.get_display_name(), tags="node"
         )
         node = NodeGraph(service, x, y, canvas_id, text_id)
         self.nodes.append(node)
@@ -103,15 +107,15 @@ class AppCanvas(tk.Canvas):
             # Rimuovi anche le relazioni collegate a questo nodo
             relationships_to_remove = [
                 rel for rel in self.relationships
-                if rel.src_node_id == node_to_delete.id or rel.dst_node_id == node_to_delete.id
+                if rel.get_src_id() == node_to_delete.get_service_id() or rel.get_dst_id() == node_to_delete.get_service_id()
             ]
             for rel in relationships_to_remove:
                 self._remove_relationship_from_canvas(rel)
                 self.relationships.remove(rel)
 
-    def add_relationship(self, src_node, dst_node, rel_type, condition, relationship_obj, creation_order_value):
+    def add_relationship(self, rel_type, condition, relationship_obj, creation_order_value):
         """Aggiunge e disegna una relazione tra due nodi"""
-        rel_graph = RelationshipGraph(src_node, dst_node, rel_type, condition, relationship_obj)
+        rel_graph = RelationshipGraph(rel_type, condition, relationship_obj)
         rel_graph.creation_order = creation_order_value
         self.relationships.append(rel_graph)
         self._draw_relationship(rel_graph)
@@ -119,8 +123,8 @@ class AppCanvas(tk.Canvas):
 
     def _draw_relationship(self, rel_graph):
         """Disegna una relazione sul canvas"""
-        src_node = self.find_node_by_id(rel_graph.src_node_id)
-        dst_node = self.find_node_by_id(rel_graph.dst_node_id)
+        src_node = self.find_node_by_id(rel_graph.get_src_id())
+        dst_node = self.find_node_by_id(rel_graph.get_dst_id())
 
         if not src_node or not dst_node:
             return
@@ -223,10 +227,18 @@ class AppCanvas(tk.Canvas):
         return None
 
     def find_node_by_id(self, node_id):
-        """Trova un nodo basandosi sul suo ID univoco"""
+        """Trova un nodo per id del NodeGraph o per id del servizio associato"""
         for node in self.nodes:
+            # Cerca per id del nodo
             if node.id == node_id:
                 return node
+            # Cerca per id del ServiceInstance (se presente)
+            if hasattr(node, "service") and hasattr(node.service, "id") and node.service.id == node_id:
+                return node
+            # Cerca per id del Service incapsulato (se ServiceInstance)
+            if hasattr(node, "service") and hasattr(node.service, "service") and hasattr(node.service.service, "id"):
+                if node.service.service.id == node_id:
+                    return node
         return None
 
     def deselect_all_nodes(self):

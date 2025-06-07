@@ -39,3 +39,11 @@ class NodeGraph:
 
     def __str__(self):
         return f"NodeGraph(id={self.id[:8]}, service={self.service.name}, pos=({self.x},{self.y}))"
+    
+    def get_service_id(self):
+        """Restituisce l'id del service incapsulato nel nodo"""
+        return getattr(self.service, "id", None)
+    
+    def get_service_name(self) -> str:
+        """Restituisce il nome del Service incapsulato"""
+        return self.service.get_display_name() 

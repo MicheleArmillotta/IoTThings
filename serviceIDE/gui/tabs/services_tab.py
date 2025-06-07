@@ -28,7 +28,9 @@ def create_services_tab(master, context):
                     text.insert(tk.END, f"🔧 Service #{count}: {service.name}\n", "title")
                     text.insert(tk.END, f"Thing: {service.thing_name} | Entity: {entity.name} (ID: {service.entity_id})\n")
                     text.insert(tk.END, f"Type: {service.type} | Category: {service.app_category}\n")
-                    text.insert(tk.END, f"API: {service.api}\n")
+                    inputs = ", ".join([f"{k}: {v}" for k, v in service.input_params.items()]) if service.input_params else "None"
+                    output = f"{service.output_name}: {service.output_type}" if service.output_name and service.output_type else "None"
+                    text.insert(tk.END, f"Endpoint: {service.endpoint} | Inputs: {inputs} | Output: {output}\n")                   
                     text.insert(tk.END, f"Description: {service.description}\n")
                     if service.keywords:
                         text.insert(tk.END, f"Keywords: {', '.join(service.keywords)}\n")

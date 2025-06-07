@@ -1,7 +1,9 @@
 import customtkinter as ctk
 from tkinter import messagebox
 import tkinter as tk
-from models.model import Relationship # Assuming Relationship is in models/model.py
+from models.base_classes import Relationship # Assuming Relationship is in models/model.py
+from models.relationship_instance import RelationshipInstance
+from models.service_instance import ServiceInstance  # Assuming ServiceInstance is in models/service_instance.py
 
 class RelationshipDialog(ctk.CTkToplevel):
     def __init__(self, master, src_node, dst_node, relationship_creation_counter_ref, on_confirm):
@@ -23,8 +25,8 @@ class RelationshipDialog(ctk.CTkToplevel):
 
     def _setup_ui(self):
         """Configura l'interfaccia utente del dialogo"""
-        ctk.CTkLabel(self, text=f"Da: {self.src_node.service.name}").pack(pady=5)
-        ctk.CTkLabel(self, text=f"A: {self.dst_node.service.name}").pack(pady=5)
+        ctk.CTkLabel(self, text=f"Da: {self.src_node.get_service_name()}").pack(pady=5)
+        ctk.CTkLabel(self, text=f"A: {self.dst_node.get_service_name()}").pack(pady=5)
 
         ctk.CTkLabel(self, text="Tipo Relazione:").pack(pady=5)
         type_menu = ctk.CTkOptionMenu(
@@ -81,13 +83,10 @@ class RelationshipDialog(ctk.CTkToplevel):
         current_counter_value = self.relationship_creation_counter_ref[0]
 
         # Crea l'oggetto Relationship del modello
-        relationship_obj = Relationship(
-            name=f"{self.src_node.service.name}_to_{self.dst_node.service.name}_{rel_type}_{current_counter_value}",
-            category=self._get_relationship_category(rel_type),
-            type=rel_type,
-            description=condition if condition else rel_type,
-            src=self.src_node.service.name,
-            dst=self.dst_node.service.name,
+        relationship_obj = RelationshipInstance.create(
+            src_instance=self.src_node.service,
+            dst_instance=self.dst_node.service,
+            rel_type=rel_type,
             condition=condition
         )
 
