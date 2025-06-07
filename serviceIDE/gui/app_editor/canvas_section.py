@@ -7,6 +7,7 @@ from tkinter import messagebox
 from gui.app_editor.node_graph import NodeGraph
 from gui.app_editor.relationship_graph import RelationshipGraph
 from models.service_instance import ServiceInstance
+from models.iot_app import IoTApp
 
 
 class AppCanvas(tk.Canvas):
@@ -264,7 +265,7 @@ class AppCanvas(tk.Canvas):
 
     def save_graphical_app_editor(self, name):
         services = [node.service for node in self.nodes]
-        relationships = [edge.relationship_obj for edge in self.relationships]
+        relationships = [edge.relationship_instance for edge in self.relationships]
         config_path = os.path.join(os.path.dirname(__file__), "../tabs/workdir_path")
         if os.path.exists(config_path):
             with open(config_path, "r") as f:
@@ -283,11 +284,8 @@ class AppCanvas(tk.Canvas):
                     messagebox.showinfo("Cancelled", "Save cancelled by user.")
                     return
 
-            app_data = {
-                "name": name,
-                "services": [service.__dict__ for service in services],
-                "relationships": [rel.__dict__ for rel in relationships]
-            }
+            app=IoTApp.from_data(name, services, relationships,exist=False)
+            app_data= app.to_dict()
 
             with open(filename, "w") as f:
                 json.dump(app_data, f, indent=4)

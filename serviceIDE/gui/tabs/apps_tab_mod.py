@@ -74,16 +74,17 @@ def create_apps_tab(master, context):
         detail_text.insert(tk.END, "📄 Human-Readable Representation:\n\n")
         detail_text.insert(tk.END, app_to_display.__repr__())
         display_app.append(app_to_display.name)
-        edit_button.pack(side=tk.LEFT, padx=10)
-        run_button.pack(side=tk.LEFT, padx=10)
-        save_button.pack(side=tk.LEFT, padx=10)
+        display_app.append(app_to_display.name)
+        edit_button.pack(side=tk.TOP, fill=tk.X, pady=5)
+        run_stop_button.pack(side=tk.TOP, fill=tk.X, pady=5)
+        save_button.pack(side=tk.TOP, fill=tk.X, pady=5)
 
     def elimnate_display():
         detail_text.delete(1.0, tk.END)
         detail_text.insert(tk.END, "")
         display_app[0] = None
         edit_button.pack_forget()
-        run_button.pack_forget()
+        run_stop_button.pack_forget()
         save_button.pack_forget()
 
     def show_app_details_from_listbox(event):
@@ -108,49 +109,58 @@ def create_apps_tab(master, context):
     app_thread = [None]  # Per tenere traccia del thread
     stop_flag = [{"stop": False}]  # Lista per mutabilità
 
-    def run_selected_app():
-        if selected_app[0]:
-            prompt_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(40, 0))
-            prompt_text.config(state="normal")
-            prompt_text.delete("1.0", tk.END)
-            prompt_text.config(state="disabled")
-            stop_flag[0]["stop"] = False  # Reset flag
+    is_running = [False]  # Stato mutabile
 
-            def app_runner():
-                invoke_iot_app(
-                    selected_app[0],
-                    write_fn=lambda text: write_to_prompt(prompt_text, text),
-                    input_fn=lambda msg: get_user_input(prompt_text, msg),
-                    stop_flag=stop_flag[0]
-                )
+    def run_or_stop_app():
+        if not is_running[0]:
+            # Avvia l'app
+            if selected_app[0]:
+                prompt_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(40, 0))
+                prompt_text.config(state="normal")
+                prompt_text.delete("1.0", tk.END)
                 prompt_text.config(state="disabled")
+                stop_flag[0]["stop"] = False
 
-            app_thread[0] = threading.Thread(target=app_runner, daemon=True)
-            app_thread[0].start()
+                def app_runner():
+                    invoke_iot_app(
+                        selected_app[0],
+                        write_fn=lambda text: write_to_prompt(prompt_text, text),
+                        input_fn=lambda msg: get_user_input(prompt_text, msg),
+                        stop_flag=stop_flag[0]
+                    )
+                    prompt_text.config(state="disabled")
+                    is_running[0] = False
+                    run_stop_button.config(text="▶️ Run App")
+                app_thread[0] = threading.Thread(target=app_runner, daemon=True)
+                app_thread[0].start()
+                is_running[0] = True
+                run_stop_button.config(text="⏹️ Stop App")
+        else:
+            # Ferma l'app
+            stop_flag[0]["stop"] = True
+            is_running[0] = False
+            run_stop_button.config(text="▶️ Run App")
 
-    def stop_running_app():
-        stop_flag[0]["stop"] = True
+
 
     apps_listbox.bind("<<ListboxSelect>>", show_app_details_from_listbox)
 
     buttons_frame = tk.Frame(frame, bg="#f0f0f0")
-    buttons_frame.pack(side=tk.BOTTOM, pady=10, fill=tk.X)
+    buttons_frame.pack(side=tk.LEFT, padx=(10, 0), pady=10, fill=tk.Y)
 
-    ttk.Button(buttons_frame, text="📂 Explore saved App", command=lambda: upload_app(workdir[0], on_finalize_app,apps, update_apps_list, display_app,elimnate_display)).pack(side=tk.LEFT, padx=10)
-    ttk.Button(buttons_frame, text="✨ Start New App", command=start_new_app).pack(side=tk.LEFT, padx=10)
-
+    # --- Pulsanti, ora verticali ---
+    ttk.Button(buttons_frame, text="📂 Explore saved App", command=lambda: upload_app(workdir[0], on_finalize_app,apps, update_apps_list, display_app,elimnate_display)).pack(side=tk.TOP, fill=tk.X, pady=5)
+    ttk.Button(buttons_frame, text="✨ Start New App", command=start_new_app).pack(side=tk.TOP, fill=tk.X, pady=5)
     edit_button = ttk.Button(buttons_frame, text="✏️ Edit App", command=edit_selected_app)
-    run_button = ttk.Button(buttons_frame, text="▶️ Run App", command=run_selected_app)
-    stop_button = ttk.Button(buttons_frame, text="⏹️ Stop App", command=stop_running_app)
-    stop_button.pack(side=tk.LEFT, padx=10)
+    run_stop_button = ttk.Button(buttons_frame, text="▶️ Run App", command=run_or_stop_app)    
     save_button = ttk.Button(buttons_frame, text="💾 Save App", command=lambda: save_selected_app(selected_app[0], workdir[0]))
     set_workdir_button = ttk.Button(buttons_frame, text="📁 Set Workdir", command=lambda: choose_workdir(workdir))
 
     # Di default nascosti
     edit_button.pack_forget()
-    run_button.pack_forget()
+    run_stop_button.pack_forget()
     save_button.pack_forget()
-    set_workdir_button.pack(side=tk.RIGHT, padx=10)
+    set_workdir_button.pack(side=tk.TOP, fill=tk.X, pady=5)
 
     return frame
 
