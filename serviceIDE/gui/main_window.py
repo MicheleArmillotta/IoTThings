@@ -5,12 +5,11 @@ from gui.tabs.services_tab import create_services_tab
 from gui.tabs.relationship_tab import create_relationships_tab
 from gui.tabs.apps_tab_mod import create_apps_tab
 import tkinter as tk
-from tkinter import ttk
-
+import customtkinter as ctk
 def make_scrollable_text(parent):
-    text_frame = tk.Frame(parent, bg="#f9f9f9")
-    text_widget = tk.Text(text_frame, wrap="word", bg="white", fg="black", font=("Consolas", 10), relief=tk.FLAT)
-    scrollbar = ttk.Scrollbar(text_frame, command=text_widget.yview)
+    text_frame = ctk.CTkFrame(parent, bg="#f9f9f9")
+    text_widget = ctk.CTkTextbox(text_frame, wrap="word", bg="white", fg="black", font=("Consolas", 10), relief=tk.FLAT)
+    scrollbar = ctk.CTkScrollbar(text_frame, command=text_widget.yview)
     text_widget.config(yscrollcommand=scrollbar.set)
 
     text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -20,13 +19,21 @@ def make_scrollable_text(parent):
 
 
 def launch_gui(context):
-    root = tk.Tk()
+    root = ctk.CTk()
     root.title("IoT Space Context")
-    root.geometry("800x600")
-
+    #root.attributes("-fullscreen", True)  # Attiva la modalità schermo intero
     # Visualizza l'indirizzo di rete
-    ip_label = tk.Label(root, text=f"IDE IP: {context.local_ip}", font=("Arial", 12))
-    ip_label.pack(pady=5)
+    ip_label = ctk.CTkLabel(root, text=f"🌐 IDE IP: {context.local_ip}", font=("Arial", 12))
+    ip_label.pack(pady=5)    
+    def toggle_fullscreen(event=None):
+        is_full = root.attributes("-fullscreen")
+        root.attributes("-fullscreen", not is_full)
+
+    def end_fullscreen(event=None):
+        root.attributes("-fullscreen", False)
+
+    root.bind("<F11>", toggle_fullscreen)
+    root.bind("<Escape>", end_fullscreen)
 
     notebook = ttk.Notebook(root)
     notebook.pack(expand=1, fill='both')

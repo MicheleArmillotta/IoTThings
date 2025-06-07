@@ -33,7 +33,11 @@ def create_services_tab(master, context):
                     text.insert(tk.END, f"Endpoint: {service.endpoint} | Inputs: {inputs} | Output: {output}\n")                   
                     text.insert(tk.END, f"Description: {service.description}\n")
                     if service.keywords:
-                        text.insert(tk.END, f"Keywords: {', '.join(service.keywords)}\n")
+                        if isinstance(service.keywords, str):
+                            keywords_str = service.keywords
+                        else:
+                            keywords_str = ', '.join(service.keywords)
+                        text.insert(tk.END, f"Keywords: {keywords_str}\n")
                     text.insert(tk.END, f"Space ID: {service.space_id}\n")
                     text.insert(tk.END, "-" * 80 + "\n", "separator")
         if count == 0:

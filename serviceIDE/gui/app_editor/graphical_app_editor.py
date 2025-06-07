@@ -100,7 +100,7 @@ class GraphicalAppEditor(ctk.CTkToplevel):
         """ ctk.CTkButton(button_frame, text="👁️ Anteprima Ordine",
                      command=self.show_relationship_order_preview).pack(side="left", padx=5)"""
         ctk.CTkButton(button_frame, text="✅ Finalize",
-                     command=self.finalize_app).pack(side="right", padx=5)
+                     command=self.finalize_app).pack(side="left", padx=5)
         
         save_button = ctk.CTkButton(
         button_frame,  # oppure self se non hai una toolbar
@@ -120,7 +120,7 @@ class GraphicalAppEditor(ctk.CTkToplevel):
         ]
 
         for label, color in items:
-            item_frame = ctk.CTkFrame(legend_frame, fg_color="transparent")
+            item_frame = ctk.CTkFrame(legend_frame)            
             item_frame.pack(fill="x", pady=2, padx=5)
             canvas = tk.Canvas(item_frame, width=20, height=10, highlightthickness=0)
             canvas.create_line(0, 5, 20, 5, fill=color, width=3)
@@ -362,7 +362,8 @@ class GraphicalAppEditor(ctk.CTkToplevel):
         if self.existing_app:
             app = IoTApp.from_data(self.existing_app.name, services, relationship_objects, exist=True, id=self.existing_app.id)
         else:
-            name = simpledialog.askstring("Nome App", "Inserisci nome per l'app:")
+            dialog = ctk.CTkInputDialog(text="Inserisci nome per l'app:", title="Nome App")
+            name = dialog.get_input()
             if not name:
                 return
             app = IoTApp.from_data(name, services, relationship_objects, exist=False)

@@ -46,7 +46,7 @@ def create_apps_tab(master, context):
 
     # Prompt (parte inferiore)
     prompt_frame = tk.Frame(right_frame, bg="#f0f0f0")
-    prompt_text = tk.Text(prompt_frame, height=8, width=60, font=("Consolas", 10), bg="black", fg="lime", insertbackground="white")
+    prompt_text = tk.Text(prompt_frame, height=20, width=60, font=("Consolas", 10), bg="black", fg="lime", insertbackground="white")
     prompt_text.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
     prompt_text.config(state="disabled")
     prompt_frame.pack_forget()  # Nascondi il prompt all'avvio
@@ -128,18 +128,18 @@ def create_apps_tab(master, context):
                         input_fn=lambda msg: get_user_input(prompt_text, msg),
                         stop_flag=stop_flag[0]
                     )
-                    prompt_text.config(state="disabled")
+                    prompt_text.configure(state="disabled")
                     is_running[0] = False
-                    run_stop_button.config(text="▶️ Run App")
+                    run_stop_button.configure(text="▶️ Run App",fg_color="#1ab126",hover_color="#179922",  text_color="#ffffff")
                 app_thread[0] = threading.Thread(target=app_runner, daemon=True)
                 app_thread[0].start()
                 is_running[0] = True
-                run_stop_button.config(text="⏹️ Stop App")
+                run_stop_button.configure(text="⏹️ Stop App",fg_color="#ff0c03",hover_color="#b30000",  text_color="#ffffff")
         else:
             # Ferma l'app
             stop_flag[0]["stop"] = True
             is_running[0] = False
-            run_stop_button.config(text="▶️ Run App")
+            run_stop_button.configure(text="▶️ Run App",fg_color="#1ab126",hover_color="#179922",  text_color="#ffffff")
 
 
 
@@ -149,12 +149,12 @@ def create_apps_tab(master, context):
     buttons_frame.pack(side=tk.LEFT, padx=(10, 0), pady=10, fill=tk.Y)
 
     # --- Pulsanti, ora verticali ---
-    ttk.Button(buttons_frame, text="📂 Explore saved App", command=lambda: upload_app(workdir[0], on_finalize_app,apps, update_apps_list, display_app,elimnate_display)).pack(side=tk.TOP, fill=tk.X, pady=5)
-    ttk.Button(buttons_frame, text="✨ Start New App", command=start_new_app).pack(side=tk.TOP, fill=tk.X, pady=5)
-    edit_button = ttk.Button(buttons_frame, text="✏️ Edit App", command=edit_selected_app)
-    run_stop_button = ttk.Button(buttons_frame, text="▶️ Run App", command=run_or_stop_app)    
-    save_button = ttk.Button(buttons_frame, text="💾 Save App", command=lambda: save_selected_app(selected_app[0], workdir[0]))
-    set_workdir_button = ttk.Button(buttons_frame, text="📁 Set Workdir", command=lambda: choose_workdir(workdir))
+    ctk.CTkButton(buttons_frame, text="📂 Explore saved App", fg_color="#e63119",hover_color="#aa120c",  text_color="#ffffff",command=lambda: upload_app(workdir[0], on_finalize_app,apps, update_apps_list,elimnate_display,frame)).pack(side=tk.TOP, fill=tk.X, pady=5)
+    set_workdir_button = ctk.CTkButton(buttons_frame, text="📁 Set Workdir",fg_color="#e69e19",hover_color="#996311", command=lambda: choose_workdir(workdir))
+    ctk.CTkButton(buttons_frame, text="✨ Start New App", command=start_new_app).pack(side=tk.TOP, fill=tk.X, pady=5)
+    edit_button = ctk.CTkButton(buttons_frame, text="✏️ Edit App",fg_color="#5c1ea3",hover_color="#3e0b79",  text_color="#ffffff", command=edit_selected_app)
+    run_stop_button =ctk.CTkButton(buttons_frame, text="▶️ Run App",fg_color="#1ab126",hover_color="#179922",  text_color="#ffffff",command=run_or_stop_app)    
+    save_button = ctk.CTkButton(buttons_frame, text="💾 Save App", command=lambda: save_selected_app(selected_app[0], workdir[0]))
 
     # Di default nascosti
     edit_button.pack_forget()
@@ -251,7 +251,7 @@ def save_selected_app(app, workdir_path):
 
 
 
-def upload_app(workdir_path, on_finalize_app, current_apps: list, update_app_list,display_app, eliminate_display):
+def upload_app(workdir_path, on_finalize_app, current_apps: list, update_app_list, eliminate_display,frame):
     def load_and_finalize(filename):
         full_path = os.path.join(workdir_path, filename)
         try:
@@ -307,6 +307,8 @@ def upload_app(workdir_path, on_finalize_app, current_apps: list, update_app_lis
     popup = ctk.CTkToplevel()
     popup.title("Upload IoT App")
     popup.geometry("400x250")
+    popup.transient(frame.winfo_toplevel())  # master è la main window o il frame principale
+    popup.grab_set()
 
     label = ctk.CTkLabel(popup, text="Select an App to Upload or Delete", font=("Arial", 16))
     label.pack(pady=10)

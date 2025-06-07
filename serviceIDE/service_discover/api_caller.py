@@ -123,6 +123,9 @@ def invoke_iot_app(app, write_fn, input_fn,stop_flag=None):
             write_fn("[FIRST CALL] Executing source service\n")
             req = build_request(src_service, write_fn, input_fn)
             res = call_api(src_service, req, write_fn)
+            if stop_flag and stop_flag.get("stop"):
+                write_fn("[STOP] Esecuzione interrotta dall'utente.\n")
+                break
             try:
                 res_json = json.loads(res) if res else {}
                 status = res_json.get("Status", "").lower() == "successful"
@@ -181,6 +184,9 @@ def invoke_iot_app(app, write_fn, input_fn,stop_flag=None):
                         auto_inputs[param] = src_output
             req = build_request(dst_service, write_fn, input_fn, src_result_map=auto_inputs)
             res = call_api(dst_service, req, write_fn)
+            if stop_flag and stop_flag.get("stop"):
+                write_fn("[STOP] Esecuzione interrotta dall'utente.\n")
+                break
             try:
                 res_json = json.loads(res) if res else {}
                 status = res_json.get("Status", "").lower() == "successful"
