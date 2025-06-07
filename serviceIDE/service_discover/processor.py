@@ -37,6 +37,7 @@ def process_tweet(tweet_data: dict, addr,context: IoTContext):
                 entity_id=tweet_data["Entity ID"],
                 space_id=tweet_data["Space ID"],
                 api=tweet_data["API"],
+                ip= addr[0],
                 type_=tweet_data.get("Type",""),
                 app_category=tweet_data.get("AppCategory", ""),
                 description=tweet_data.get("Description", ""),

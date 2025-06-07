@@ -12,6 +12,7 @@ class Service:
     entity_id: str
     space_id: str
     endpoint: str  # Estratto dall'API - es. "CheckFlameStatus"
+    ip: Any
     input_params: Dict[str, str] = field(default_factory=dict)  # nome_param -> tipo
     output_name: Optional[str] = None
     output_type: Optional[str] = None
@@ -21,7 +22,7 @@ class Service:
     keywords: str = ""
 
     @classmethod
-    def from_api_string(cls, name, thing_name, entity_id, space_id, api_string, 
+    def from_api_string(cls, name, thing_name, entity_id, space_id, api_string, ip,
                        type_="", app_category="", description="", keywords=""):
         """Crea un Service parsando l'API string originale"""
         # Parse: "CheckFlameStatus:[NULL]:(flameStatus,int,NULL)"
@@ -58,6 +59,7 @@ class Service:
             entity_id=entity_id,
             space_id=space_id,
             endpoint=endpoint,
+            ip = ip,
             input_params=input_params,
             output_name=output_name,
             output_type=output_type,
@@ -157,7 +159,7 @@ class IoTContext:
 
     def add_service_to_entity(self, thing_id: str, service_name: str, entity_id: str, 
                              space_id: str, api: str, type_: str, app_category: str, 
-                             description: str, keywords: str):
+                             description: str, keywords: str, ip: Any):
         """Aggiunge un servizio a un'entità usando il nuovo formato Service"""
         if thing_id in self.things:
             entity_found = None
@@ -190,10 +192,12 @@ class IoTContext:
                             entity_id=entity_id,
                             space_id=space_id,
                             api_string=api,
+                            ip= ip,
                             type_=type_,
                             app_category=app_category,
                             description=description,
                             keywords=keywords
+
                         )
                         entity_found.services.append(service)
                     except ValueError as e:

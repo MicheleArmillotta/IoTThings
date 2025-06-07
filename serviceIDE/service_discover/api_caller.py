@@ -79,8 +79,8 @@ def evaluate_condition(response, condition: str) -> bool:
 def call_api(service_instance, req, write_fn):
     service = service_instance.service
     write_fn(f"[API] Calling service: {service.name} with API: {json.dumps(req)}\n")
-    IP = '192.168.8.201'
-    PORT = 6668
+    IP = service.ip
+    PORT = 6668  #Hardcoded in Atlas
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.settimeout(10.0)
