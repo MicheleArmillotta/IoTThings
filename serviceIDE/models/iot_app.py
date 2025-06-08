@@ -1,5 +1,3 @@
-
-
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Any
 import uuid
@@ -13,31 +11,30 @@ class IoTApp:
         self.name = name
         self.service_instances: List[ServiceInstance] = []
         self.relationship_instances: List[RelationshipInstance] = []
-# ...existing code...
 
     def add_service_instance(self, service_instance: ServiceInstance):
-        """Aggiunge un ServiceInstance all'app"""
+        """Adds a ServiceInstance to the app"""
         if service_instance not in self.service_instances:
             self.service_instances.append(service_instance)
 
     def remove_service_instance(self, service_instance_id: str):
-        """Rimuove un ServiceInstance e tutte le sue relazioni"""
-        # Rimuovi le relazioni associate
+        """Removes a ServiceInstance and all its relationships"""
+        # Remove associated relationships
         self.relationship_instances = [
             rel for rel in self.relationship_instances
             if rel.src_service_instance.id != service_instance_id and 
                rel.dst_service_instance.id != service_instance_id
         ]
         
-        # Rimuovi il service instance
+        # Remove the service instance
         self.service_instances = [
             si for si in self.service_instances 
             if si.id != service_instance_id
         ]
 
     def add_relationship_instance(self, relationship_instance: RelationshipInstance):
-        """Aggiunge una RelationshipInstance all'app"""
-        # Verifica che entrambi i ServiceInstance siano nell'app
+        """Adds a RelationshipInstance to the app"""
+        # Verify that both ServiceInstances are in the app
         src_exists = any(si.id == relationship_instance.get_src_id()
                         for si in self.service_instances)
         dst_exists = any(si.id == relationship_instance.get_dst_id() 
@@ -49,14 +46,14 @@ class IoTApp:
         self.relationship_instances.append(relationship_instance)
 
     def get_service_instance_by_id(self, service_id: str) -> Optional[ServiceInstance]:
-        """Trova un ServiceInstance per ID"""
+        """Finds a ServiceInstance by ID"""
         for si in self.service_instances:
             if si.id == service_id:
                 return si
         return None
 
     def get_duplicate_services(self) -> Dict[str, List[ServiceInstance]]:
-        """Raggruppa i ServiceInstance per servizio base"""
+        """Groups ServiceInstances by base service"""
         groups = {}
         for si in self.service_instances:
             service_key = f"{si.service.name}_{si.service.entity_id}"
@@ -66,20 +63,20 @@ class IoTApp:
         return {k: v for k, v in groups.items() if len(v) > 1}
 
     def validate_app(self) -> List[str]:
-        """Valida l'app e restituisce una lista di errori"""
+        """Validates the app and returns a list of errors"""
         errors = []
         
-        # Verifica che ci siano service instances
+        # Verify that there are service instances
         if not self.service_instances:
             errors.append("App must have at least one service instance")
         
-        # Verifica che tutti i ServiceInstance abbiano input configurati se richiesti
+        # Verify that all ServiceInstances have configured inputs if required
         for si in self.service_instances:
             missing_inputs = si.get_missing_inputs()
             if missing_inputs:
                 errors.append(f"Service '{si.get_display_name()}' missing inputs: {', '.join(missing_inputs)}")
         
-        # Verifica che le relazioni abbiano ServiceInstance validi
+        # Verify that relationships have valid ServiceInstances
         for rel in self.relationship_instances:
             if rel.src_service_instance not in self.service_instances:
                 errors.append(f"Relationship '{rel.get_display_name()}' has invalid source service")
@@ -107,7 +104,7 @@ class IoTApp:
             for rel in self.relationship_instances:
                 lines.append(f"   • {rel.get_display_name()}")
 
-        # Mostra duplicati se esistono
+        # Show duplicates if they exist
         duplicates = self.get_duplicate_services()
         if duplicates:
             lines.append("\n👥 Duplicate Services:")
@@ -117,7 +114,7 @@ class IoTApp:
         return "\n".join(lines)
 
     def to_dict(self) -> Dict:
-        """Serializza l'app in dizionario"""
+        """Serializes the app into a dictionary"""
         return {
             "id": self.id,
             "name": self.name,
@@ -127,28 +124,26 @@ class IoTApp:
 
     @classmethod
     def from_dict(cls, data: Dict):
-        """Deserializza l'app da dizionario"""
-        app = cls(data["name"], id=data.get("id"))  # <-- Passa l'id!
+        """Deserializes the app from a dictionary"""
+        app = cls(data["name"], id=data.get("id"))  # <-- Pass the id!
         
-        # Carica service instances
+        # Load service instances
         for si_data in data.get("service_instances", []):
             si = ServiceInstance.from_dict(si_data)
             app.add_service_instance(si)
         
-        # Carica relationship instances
+        # Load relationship instances
         for ri_data in data.get("relationship_instances", []):
             ri = RelationshipInstance.from_dict(ri_data)
             app.add_relationship_instance(ri)
         
         return app
     
-    
     @classmethod
-
     def from_data(cls, name, services: list[ServiceInstance], relationships: list[RelationshipInstance], exist: bool, id: str = None) -> 'IoTApp':
         """
-        Crea un IoTApp da una lista di oggetti ServiceInstance e RelationshipInstance.
-        La lista di relationship è assunta ordinata.
+        Creates an IoTApp from a list of ServiceInstance and RelationshipInstance objects.
+        The relationship list is assumed to be ordered.
         """
         app = cls(name, id=id if exist else None)
         for s in services:

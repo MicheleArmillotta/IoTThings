@@ -2,38 +2,38 @@
 import uuid
 
 class NodeGraph:
-    """Rappresenta un nodo nel canvas con tutte le sue proprietà"""
+    """Represents a node on the canvas with all its properties"""
 
     def __init__(self, service, x, y, canvas_id=None, text_id=None):
-        self.id = str(uuid.uuid4())  # ID univoco per il nodo
+        self.id = str(uuid.uuid4())  # Unique ID for the node
         self.service = service
         self.x = x
         self.y = y
-        self.canvas_id = canvas_id  # ID dell'elemento canvas (ovale)
-        self.text_id = text_id      # ID del testo nel canvas
+        self.canvas_id = canvas_id  # Canvas element ID (oval)
+        self.text_id = text_id      # Text ID on the canvas
         self.is_selected = False
         self.width = 100
         self.height = 60
 
     def get_center(self):
-        """Restituisce il centro del nodo"""
+        """Returns the center of the node"""
         return (self.x + self.width // 2, self.y + self.height // 2)
 
     def get_bottom_center(self):
-        """Restituisce il punto centrale del bordo inferiore"""
+        """Returns the center point of the bottom edge"""
         return (self.x + self.width // 2, self.y + self.height)
 
     def get_top_center(self):
-        """Restituisce il punto centrale del bordo superiore"""
+        """Returns the center point of the top edge"""
         return (self.x + self.width // 2, self.y)
 
     def contains_point(self, x, y):
-        """Verifica se un punto è all'interno del nodo"""
+        """Checks if a point is inside the node"""
         return (self.x <= x <= self.x + self.width and
                 self.y <= y <= self.y + self.height)
 
     def update_position(self, new_x, new_y):
-        """Aggiorna la posizione del nodo"""
+        """Updates the position of the node"""
         self.x = new_x
         self.y = new_y
 
@@ -41,9 +41,9 @@ class NodeGraph:
         return f"NodeGraph(id={self.id[:8]}, service={self.service.name}, pos=({self.x},{self.y}))"
     
     def get_service_id(self):
-        """Restituisce l'id del service incapsulato nel nodo"""
+        """Returns the ID of the service encapsulated in the node"""
         return getattr(self.service, "id", None)
     
     def get_service_name(self) -> str:
-        """Restituisce il nome del Service incapsulato"""
-        return self.service.get_display_name() 
+        """Returns the name of the encapsulated Service"""
+        return self.service.get_display_name()

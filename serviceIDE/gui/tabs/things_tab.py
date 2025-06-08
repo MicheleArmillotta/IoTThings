@@ -23,7 +23,7 @@ def create_things_tab(master, context):
         text.delete(1.0, tk.END)
         for thing in sorted(context.get_things(), key=lambda x: x.name):
             text.insert(tk.END, f"📦 Thing: {thing.name}\n", "title")
-            text.insert(tk.END, f"Address: {thing.address}\n","address")
+            text.insert(tk.END, f"Address: {thing.address}\n", "address")
             text.insert(tk.END, f"Description: {thing.description}\n", "description")
             text.insert(tk.END, "Entities:\n")
             for entity in sorted(thing.entities, key=lambda e: e.name):
@@ -32,11 +32,10 @@ def create_things_tab(master, context):
                     text.insert(tk.END, "    • No services found\n", "warn")
                 else:
                     for service in sorted(entity.services, key=lambda s: s.name):
-                        text.insert(tk.END, f"    • {service.name}\n","service")
+                        text.insert(tk.END, f"    • {service.name}\n", "service")
             text.insert(tk.END, "\n", "spacer")
         frame.after(1000, update)
 
- 
     update()
     return frame
 

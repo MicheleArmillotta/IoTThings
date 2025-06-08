@@ -1,15 +1,14 @@
-
 import json
 from models.base_classes import IoTContext
 
-def process_tweet(tweet_data: dict, addr,context: IoTContext):
+def process_tweet(tweet_data: dict, addr, context: IoTContext):
     try:
         tweet_type = tweet_data.get("Tweet Type")
 
         if tweet_type == "Identity_Thing":
             context.add_thing(
                 thing_id=tweet_data["Thing ID"],
-                address = addr,
+                address=addr,
                 name=tweet_data["Name"],
                 space_id=tweet_data["Space ID"],
                 model=tweet_data.get("Model", ""),
@@ -24,7 +23,7 @@ def process_tweet(tweet_data: dict, addr,context: IoTContext):
                 entity_name=tweet_data["Name"],
                 entity_id=tweet_data["ID"],
                 space_id=tweet_data["Space ID"],
-                type_=tweet_data.get("Type",""),
+                type_=tweet_data.get("Type", ""),
                 vendor=tweet_data.get("Vendor", ""),
                 description=tweet_data.get("Description", ""),
                 owner=tweet_data.get("Owner", "")
@@ -37,8 +36,8 @@ def process_tweet(tweet_data: dict, addr,context: IoTContext):
                 entity_id=tweet_data["Entity ID"],
                 space_id=tweet_data["Space ID"],
                 api=tweet_data["API"],
-                ip= addr[0],
-                type_=tweet_data.get("Type",""),
+                ip=addr[0],
+                type_=tweet_data.get("Type", ""),
                 app_category=tweet_data.get("AppCategory", ""),
                 description=tweet_data.get("Description", ""),
                 keywords=tweet_data.get("Keywords", "")

@@ -13,6 +13,7 @@ from models.base_classes import IoTContext
 tweet_queue = queue.Queue()
 address_queue = queue.Queue()
 context = IoTContext()
+
 class TweetListener(threading.Thread):
     def __init__(self, multicast_group='232.1.1.1', port=1235, buffer_size=1024):
         super().__init__(daemon=True)
@@ -31,15 +32,15 @@ class TweetListener(threading.Thread):
 
     def fix_invalid_json(self, json_str):
         """
-        Escape virgolette non corrette nel campo 'API'
+        Escapes incorrect quotes in the 'API' field
         """
         def escape_quotes(match):
             field_content = match.group(1)
-            # Escape virgolette interne con \"
+            # Escape internal quotes with \"
             field_content = field_content.replace('"', r'\"')
             return f'"API": "{field_content}"'
 
-        # Match campo "API": "valore con virgolette non escape-ate"
+        # Match field "API": "value with unescaped quotes"
         fixed_str = re.sub(r'"API"\s*:\s*"([^"]+:\[.*?\]\:\(.*?\))"', escape_quotes, json_str)
         return fixed_str
 
@@ -51,7 +52,7 @@ class TweetListener(threading.Thread):
                 tweet_json = data.decode('utf-8')
                 print(f"[Listener] Received tweet from {addr}: {tweet_json}")
 
-                # Fix JSON se malformato
+                # Fix JSON if malformed
                 tweet_json = self.fix_invalid_json(tweet_json)
 
                 tweet_data = json.loads(tweet_json)

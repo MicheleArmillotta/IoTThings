@@ -126,16 +126,16 @@ class AppExecutor:
 
     def parse_api_string(self, api_str, input_names, input_types):
         """Parse API string and extract components"""
-        # Regex per trovare le parti principali
+        # Regex to find the main parts
         match = re.match(r'^(\w+):\[(.*?)\]:\((.*?)\)$', api_str.strip())
         if not match:
-            raise ValueError("Formato non valido")
+            raise ValueError("Invalid format")
 
         endpoint = match.group(1)
         input_str = match.group(2)
         output_str = match.group(3)
 
-        # Pulizia liste di input
+        # Clear input lists
         input_names.clear()
         input_types.clear()
 

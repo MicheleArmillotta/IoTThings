@@ -3,7 +3,7 @@ from tkinter import ttk
 
 def make_scrollable_text(parent):
     text_frame = tk.Frame(parent, bg="#f9f9f9")
-    text_widget = tk.Text(text_frame, wrap="word", bg="white", fg="black", font=("Consolas", 10), relief=tk.FLAT)
+    text_widget = tk.Text(text_frame, wrap="word", bg="white", fg="black", font=("Consolas", 14), relief=tk.FLAT)
     scrollbar = ttk.Scrollbar(text_frame, command=text_widget.yview)
     text_widget.config(yscrollcommand=scrollbar.set)
 
@@ -33,7 +33,7 @@ def create_relationships_tab(master, context):
             text.insert(tk.END, "⚠️ No relationships found.\n", "warn")
         frame.after(1000, update)
 
-    text.tag_config("title", font=("Arial", 10, "bold"), foreground="#334d5c")
+    text.tag_config("title", font=("Arial", 14, "bold"), foreground="#334d5c")
     text.tag_config("warn", foreground="#d9534f")
     text.tag_config("separator", foreground="#cccccc")
 

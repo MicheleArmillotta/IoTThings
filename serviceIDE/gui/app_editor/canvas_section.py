@@ -14,10 +14,10 @@ class AppCanvas(tk.Canvas):
     def __init__(self, master=None, **kwargs):
         super().__init__(master, bg="white", **kwargs)
 
-        self.nodes = []  # Lista di NodeGraph
-        self.relationships = []  # Lista di RelationshipGraph
+        self.nodes = []  # List of NodeGraph
+        self.relationships = []  # List of RelationshipGraph
 
-        # Variabili per il drag & drop
+        # Variables for drag & drop
         self.dragged_node = None
         self.drag_offset = (0, 0)
         self.selected_nodes = []
@@ -30,18 +30,18 @@ class AppCanvas(tk.Canvas):
         self.bind("<ButtonRelease-1>", self._on_canvas_release)
 
     def _on_canvas_click(self, event):
-        """Gestisce il click sul canvas (selezione nodi)"""
+        """Handles canvas click (node selection)"""
         clicked_items = self.find_closest(event.x, event.y)
         node = self.find_node_by_canvas_id(clicked_items[0])
 
         if node:
             if node in self.selected_nodes:
-                # Deseleziona
+                # Deselect
                 self.selected_nodes.remove(node)
                 node.is_selected = False
                 self.itemconfig(node.canvas_id, outline="black", width=1)
             else:
-                # Seleziona
+                # Select
                 self.selected_nodes.append(node)
                 node.is_selected = True
                 self.itemconfig(node.canvas_id, outline="red", width=3)
@@ -50,7 +50,7 @@ class AppCanvas(tk.Canvas):
             self.master.update_input_panel()
 
     def _on_canvas_drag(self, event):
-        """Gestisce il trascinamento dei nodi"""
+        """Handles node dragging"""
         if not self.dragged_node:
             clicked_items = self.find_withtag("current")
             if clicked_items:
@@ -60,7 +60,7 @@ class AppCanvas(tk.Canvas):
                     self.drag_offset = (event.x - node.x, event.y - node.y)
             return
 
-        # Aggiorna posizione
+        # Update position
         node = self.dragged_node
         dx, dy = self.drag_offset
         new_x = event.x - dx
@@ -68,23 +68,23 @@ class AppCanvas(tk.Canvas):
 
         node.update_position(new_x, new_y)
 
-        # Aggiorna canvas
+        # Update canvas
         self.coords(node.canvas_id, new_x, new_y,
                           new_x + node.width, new_y + node.height)
         self.coords(node.text_id, new_x + node.width // 2,
                           new_y + node.height // 2)
 
-        # Ridisegna le relazioni
+        # Redraw relationships
         self.redraw_relationships()
 
     def _on_canvas_release(self, event):
-        """Rilascia il nodo trascinato"""
+        """Releases the dragged node"""
         self.dragged_node = None
 
     def add_node(self, service, x, y):
-        """Aggiunge un nuovo nodo servizio al canvas e lo disegna"""
+        """Adds a new service node to the canvas and draws it"""
         canvas_id = self.create_oval(
-            x, y, x + 100, y + 60, # Utilizza le costanti dal NodeGraph
+            x, y, x + 100, y + 60, # Use constants from NodeGraph
             fill="#b3d9ff", tags="node"
         )
         text_id = self.create_text(
@@ -96,7 +96,7 @@ class AppCanvas(tk.Canvas):
         return node
 
     def delete_node(self, node_id):
-        """Elimina un nodo dal canvas e dalla lista"""
+        """Deletes a node from the canvas and the list"""
         node_to_delete = self.find_node_by_id(node_id)
         if node_to_delete:
             self.delete(node_to_delete.canvas_id)
@@ -105,7 +105,7 @@ class AppCanvas(tk.Canvas):
             if node_to_delete in self.selected_nodes:
                 self.selected_nodes.remove(node_to_delete)
 
-            # Rimuovi anche le relazioni collegate a questo nodo
+            # Also remove relationships connected to this node
             relationships_to_remove = [
                 rel for rel in self.relationships
                 if rel.get_src_id() == node_to_delete.get_service_id() or rel.get_dst_id() == node_to_delete.get_service_id()
@@ -115,7 +115,7 @@ class AppCanvas(tk.Canvas):
                 self.relationships.remove(rel)
 
     def add_relationship(self, rel_type, condition, relationship_obj, creation_order_value):
-        """Aggiunge e disegna una relazione tra due nodi"""
+        """Adds and draws a relationship between two nodes"""
         rel_graph = RelationshipGraph(rel_type, condition, relationship_obj)
         rel_graph.creation_order = creation_order_value
         self.relationships.append(rel_graph)
@@ -123,7 +123,7 @@ class AppCanvas(tk.Canvas):
         return rel_graph
 
     def _draw_relationship(self, rel_graph):
-        """Disegna una relazione sul canvas"""
+        """Draws a relationship on the canvas"""
         src_node = self.find_node_by_id(rel_graph.get_src_id())
         dst_node = self.find_node_by_id(rel_graph.get_dst_id())
 
@@ -133,7 +133,7 @@ class AppCanvas(tk.Canvas):
         line_id, label_pos = self._calculate_arrow_path(src_node, dst_node, rel_graph.color)
         rel_graph.line_id = line_id
 
-        # Aggiungi etichetta condizione se necessaria
+        # Add condition label if necessary
         if rel_graph.condition:
             label_id = self.create_text(
                 label_pos[0], label_pos[1],
@@ -145,34 +145,34 @@ class AppCanvas(tk.Canvas):
             rel_graph.condition_label_id = label_id
 
     def _remove_relationship_from_canvas(self, rel_graph):
-        """Rimuove una relazione dal canvas"""
+        """Removes a relationship from the canvas"""
         if rel_graph.line_id:
             self.delete(rel_graph.line_id)
         if rel_graph.condition_label_id:
             self.delete(rel_graph.condition_label_id)
 
     def redraw_relationships(self):
-        """Ridisegna tutte le relazioni"""
+        """Redraws all relationships"""
         for rel_graph in self.relationships:
-            # Rimuovi elementi esistenti
+            # Remove existing elements
             self._remove_relationship_from_canvas(rel_graph)
-            # Ridisegna
+            # Redraw
             self._draw_relationship(rel_graph)
 
     def _calculate_arrow_path(self, src_node, dst_node, color):
-        """Calcola il percorso della freccia tra due nodi"""
-        # Assicurati che i nodi siano nella lista per calcolare l'indice
+        """Calculates the arrow path between two nodes"""
+        # Ensure nodes are in the list to calculate the index
         try:
             src_idx = self.nodes.index(src_node)
             dst_idx = self.nodes.index(dst_node)
         except ValueError:
-            # Fallback se i nodi non sono trovati (dovrebbe essere raro)
+            # Fallback if nodes are not found (should be rare)
             return self._create_straight_arrow(src_node.get_bottom_center()[0], src_node.get_bottom_center()[1],
                                               dst_node.get_top_center()[0], dst_node.get_top_center()[1], color)
 
         distance = abs(dst_idx - src_idx)
         vertical_distance = abs(src_node.y - dst_node.y)
-        nodes_between = vertical_distance // src_node.height # Approssimazione
+        nodes_between = vertical_distance // src_node.height # Approximation
 
         src_x, src_y = src_node.get_bottom_center()
         dst_x, dst_y = dst_node.get_top_center()
@@ -183,7 +183,7 @@ class AppCanvas(tk.Canvas):
             return self._create_straight_arrow(src_x, src_y, dst_x, dst_y, color)
 
     def _create_straight_arrow(self, src_x, src_y, dst_x, dst_y, color):
-        """Crea una freccia dritta"""
+        """Creates a straight arrow"""
         line = self.create_line(
             src_x, src_y, dst_x, dst_y,
             arrow=tk.LAST, fill=color, width=3, smooth=True
@@ -191,12 +191,12 @@ class AppCanvas(tk.Canvas):
         return line, (dst_x + 10, (src_y + dst_y) // 2)
 
     def _create_curved_arrow(self, src_node, dst_node, src_idx, dst_idx, color):
-        """Crea una freccia curva"""
+        """Creates a curved arrow"""
         src_x, src_y = src_node.get_bottom_center()
         dst_x, dst_y = dst_node.get_top_center()
 
         curve_direction = 1 if (src_idx + dst_idx) % 2 == 0 else -1
-        # L'offset dipende dalla distanza tra i nodi
+        # Offset depends on the distance between nodes
         lateral_offset = min(120 + abs(src_idx - dst_idx - 1) * 30, 200)
 
         control_x = src_x + (lateral_offset * curve_direction)
@@ -221,29 +221,29 @@ class AppCanvas(tk.Canvas):
         return line, (control_x + 20, control_y)
 
     def find_node_by_canvas_id(self, canvas_id):
-        """Trova un nodo basandosi sull'ID dell'elemento canvas"""
+        """Finds a node based on the canvas element ID"""
         for node in self.nodes:
             if canvas_id in (node.canvas_id, node.text_id):
                 return node
         return None
 
     def find_node_by_id(self, node_id):
-        """Trova un nodo per id del NodeGraph o per id del servizio associato"""
+        """Finds a node by NodeGraph ID or associated service ID"""
         for node in self.nodes:
-            # Cerca per id del nodo
+            # Search by node ID
             if node.id == node_id:
                 return node
-            # Cerca per id del ServiceInstance (se presente)
+            # Search by ServiceInstance ID (if present)
             if hasattr(node, "service") and hasattr(node.service, "id") and node.service.id == node_id:
                 return node
-            # Cerca per id del Service incapsulato (se ServiceInstance)
+            # Search by encapsulated Service ID (if ServiceInstance)
             if hasattr(node, "service") and hasattr(node.service, "service") and hasattr(node.service.service, "id"):
                 if node.service.service.id == node_id:
                     return node
         return None
 
     def deselect_all_nodes(self):
-        """Deseleziona tutti i nodi"""
+        """Deselects all nodes"""
         for node in self.selected_nodes:
             node.is_selected = False
             self.itemconfig(node.canvas_id, outline="black", width=1)
@@ -256,7 +256,7 @@ class AppCanvas(tk.Canvas):
         return self.relationships
 
     def clear_canvas(self):
-        """Cancella tutti gli elementi dal canvas"""
+        """Clears all elements from the canvas"""
         self.delete("all")
         self.nodes.clear()
         self.relationships.clear()
@@ -266,12 +266,22 @@ class AppCanvas(tk.Canvas):
     def save_graphical_app_editor(self, name):
         services = [node.service for node in self.nodes]
         relationships = [edge.relationship_instance for edge in self.relationships]
-        config_path = os.path.join(os.path.dirname(__file__), "../tabs/workdir_path")
+        config_path = os.path.join(os.path.dirname(__file__), "..", "tabs", "workdir_path")
+        workdir = None  # preventive initialization
+
+        config_path = os.path.normpath(
+            os.path.join(os.path.dirname(__file__), "..", "tabs", "workdir_path")
+        )
+        print("Config path:", config_path)
         if os.path.exists(config_path):
             with open(config_path, "r") as f:
                 path = f.read().strip()
-                if os.path.isdir(path):
+                print("Read workdir path from config:", path)
+                if os.path.exists(path):
                     workdir = path
+                    print("Workdir path found:", workdir)
+
+        print("WORKDIR:", workdir)
 
         try:
         

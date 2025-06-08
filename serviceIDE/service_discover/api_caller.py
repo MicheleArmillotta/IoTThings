@@ -5,26 +5,26 @@ import json
 
 def build_request(service_instance, write_fn, input_fn, src_result_map=None):
     """
-    Costruisce la richiesta per il servizio, usando input_values già configurati
-    e, se necessario, inserendo l'output del servizio src come input.
+    Builds the request for the service, using already configured input_values
+    and, if necessary, inserting the output of the src service as input.
     """
     service = service_instance.service
     input_params = getattr(service, "input_params", {})
-    input_values = dict(service_instance.input_values)  # copia per non modificare l'originale
+    input_values = dict(service_instance.input_values)  # copy to avoid modifying the original
 
-    # Se src_result_map è fornita, inserisci l'output del servizio src se richiesto
+    # If src_result_map is provided, insert the output of the src service if required
     if src_result_map:
         for param in input_params:
             if param in src_result_map:
                 input_values[param] = src_result_map[param]
 
-    # Chiedi all'utente solo per gli input mancanti
+    # Ask the user only for missing inputs
     for param, param_type in input_params.items():
         if param not in input_values or input_values[param] == "":
             while True:
-                value = input_fn(f"Inserisci il valore per '{param}' ({param_type}): ")
+                value = input_fn(f"Enter the value for '{param}' ({param_type}): ")
                 if not value:
-                    write_fn("Input annullato o vuoto. Riprova.\n")
+                    write_fn("Input canceled or empty. Try again.\n")
                     continue
                 try:
                     if value.lower() == "null":
@@ -34,16 +34,16 @@ def build_request(service_instance, write_fn, input_fn, src_result_map=None):
                     elif param_type == "float":
                         value = str(float(value))
                     elif param_type == "bool":
-                        value = "true" if value.lower() in ["true", "1", "sì", "si", "yes"] else "false"
+                        value = "true" if value.lower() in ["true", "1", "yes"] else "false"
                     elif param_type == "str":
                         value = f'"{value}"'
                     else:
-                        write_fn(f"Tipo '{param_type}' non supportato, trattato come stringa.\n")
+                        write_fn(f"Type '{param_type}' not supported, treated as string.\n")
                         value = f'"{value}"'
                     input_values[param] = value
                     break
                 except ValueError:
-                    write_fn(f"Valore non valido per il tipo {param_type}. Riprova.\n")
+                    write_fn(f"Invalid value for type {param_type}. Try again.\n")
 
     inputs = f"({', '.join(str(input_values[p]) for p in input_params)})" if input_params else "()"
 
@@ -57,6 +57,9 @@ def build_request(service_instance, write_fn, input_fn, src_result_map=None):
     return request
 
 def evaluate_condition(response, condition: str) -> bool:
+    """
+    Evaluates a condition based on the response value.
+    """
     ops = {
         ">": operator.gt,
         "<": operator.lt,
@@ -77,10 +80,13 @@ def evaluate_condition(response, condition: str) -> bool:
         return False
 
 def call_api(service_instance, req, write_fn):
+    """
+    Calls the API for the given service instance.
+    """
     service = service_instance.service
     write_fn(f"[API] Calling service: {service.name} with API: {json.dumps(req)}\n")
     IP = service.ip
-    PORT = 6668  #Hardcoded in Atlas
+    PORT = 6668  # Hardcoded in Atlas
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.settimeout(10.0)
@@ -96,20 +102,23 @@ def call_api(service_instance, req, write_fn):
         write_fn(f"[ERROR] Calling {service.name}: {e}\n")
         return None
 
-def invoke_iot_app(app, write_fn, input_fn,stop_flag=None):
+def invoke_iot_app(app, write_fn, input_fn, stop_flag=None):
+    """
+    Invokes the IoT application by executing its services and relationships.
+    """
     write_fn(f"[APP] Invoking IoT App: {app.name}\n")
     service_map = {s.id: s for s in app.service_instances}
     res_map = {}  # id_service_instance: [success, result]
-    output_map = {}  # id_service_instance: result (per auto-input)
+    output_map = {}  # id_service_instance: result (for auto-input)
 
     for rel in app.relationship_instances:
         if stop_flag and stop_flag.get("stop"):
-            write_fn("[STOP] Esecuzione interrotta dall'utente.\n")
+            write_fn("[STOP] Execution interrupted by user.\n")
             break
         src_instance = rel.src
         dst_instance = rel.dst
         rel_type = rel.type.lower()
-       # write_fn(f"[DEBUG] rel.src: {src_instance} ({type(src_instance)}), rel.dst: {dst_instance} ({type(dst_instance)})\n")
+        # write_fn(f"[DEBUG] rel.src: {src_instance} ({type(src_instance)}), rel.dst: {dst_instance} ({type(dst_instance)})\n")
 
         src_service = service_map.get(src_instance.id)
         dst_service = service_map.get(dst_instance.id)
@@ -118,13 +127,13 @@ def invoke_iot_app(app, write_fn, input_fn,stop_flag=None):
             write_fn(f"[WARNING] Missing service(s): {src_instance.get_display_name()} or {dst_instance.get_display_name()}\n")
             continue
 
-        # Esegui il servizio sorgente solo se non già eseguito
+        # Execute the source service only if not already executed
         if src_instance.id not in res_map:
             write_fn("[FIRST CALL] Executing source service\n")
             req = build_request(src_service, write_fn, input_fn)
             res = call_api(src_service, req, write_fn)
             if stop_flag and stop_flag.get("stop"):
-                write_fn("[STOP] Esecuzione interrotta dall'utente.\n")
+                write_fn("[STOP] Execution interrupted by user.\n")
                 break
             try:
                 res_json = json.loads(res) if res else {}
@@ -140,6 +149,7 @@ def invoke_iot_app(app, write_fn, input_fn,stop_flag=None):
 
         should_execute_dst = False
 
+        # Determine whether to execute the destination service
         if rel_type == "ordered":
             write_fn(f"[ORDERED] Executing destination service: {dst_instance.get_display_name()}\n")
             should_execute_dst = True
@@ -169,23 +179,23 @@ def invoke_iot_app(app, write_fn, input_fn,stop_flag=None):
             write_fn(f"[WARNING] Unknown relation type: {rel.type}\n")
 
         if should_execute_dst:
-            # Prepara la mappa per auto-input: se un input del dst ha lo stesso nome dell'output del src, lo inserisce
+            # Prepare the map for auto-input: if a destination input has the same name as the source output, insert it
             auto_inputs = {}
             src_output = output_map.get(src_instance.id)
             dst_input_params = getattr(dst_service.service, "input_params", {})
             if src_output is not None:
                 for param in dst_input_params:
-                    # Se il valore attuale dell'input è esattamente il nome dell'output della src, sostituiscilo
+                    # If the current input value is exactly the name of the src output, replace it
                     current_val = dst_service.input_values.get(param, "")
                     if current_val == "" or current_val == str(src_output):
-                        continue  # Non sostituire se già impostato o vuoto
-                    # Se il valore dell'input è esattamente il nome dell'output della src, sostituisci
-                    if current_val == rel.src.service.output_name:  # rel.src_output_name deve essere definito nel modello
+                        continue  # Do not replace if already set or empty
+                    # If the input value is exactly the name of the src output, replace it
+                    if current_val == rel.src.service.output_name:  # rel.src_output_name must be defined in the model
                         auto_inputs[param] = src_output
             req = build_request(dst_service, write_fn, input_fn, src_result_map=auto_inputs)
             res = call_api(dst_service, req, write_fn)
             if stop_flag and stop_flag.get("stop"):
-                write_fn("[STOP] Esecuzione interrotta dall'utente.\n")
+                write_fn("[STOP] Execution interrupted by user.\n")
                 break
             try:
                 res_json = json.loads(res) if res else {}

@@ -1,4 +1,3 @@
-
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Any
 import socket
@@ -7,7 +6,7 @@ from models.service_instance import ServiceInstance
 
 @dataclass
 class RelationshipInstance:
-    """Rappresenta una relazione specifica tra due ServiceInstance"""
+    """Represents a specific relationship between two ServiceInstances"""
     id: str
     src: ServiceInstance
     dst: ServiceInstance
@@ -26,7 +25,7 @@ class RelationshipInstance:
             self.category = self._get_default_category()
 
     def _get_default_category(self) -> str:
-        """Determina la categoria di default basata sul tipo"""
+        """Determines the default category based on the type"""
         category_map = {
             "ordered": "order",
             "on-success": "order-based", 
@@ -37,7 +36,7 @@ class RelationshipInstance:
     @classmethod
     def create(cls, src_instance: ServiceInstance, dst_instance: ServiceInstance, 
                rel_type: str, condition: Optional[str] = None):
-        """Factory method per creare una RelationshipInstance"""
+        """Factory method to create a RelationshipInstance"""
         return cls(
             id=str(uuid.uuid4()),
             src=src_instance,
@@ -47,14 +46,14 @@ class RelationshipInstance:
         )
 
     def get_display_name(self) -> str:
-        """Restituisce il nome da mostrare nell'interfaccia"""
+        """Returns the name to display in the interface"""
         base_name = f"{self.src.get_display_name()} → {self.dst.get_display_name()}"
         if self.condition:
             return f"{base_name} ({self.condition})"
         return f"{base_name} ({self.type})"
 
     def to_dict(self) -> Dict:
-        """Serializza in dizionario"""
+        """Serializes into a dictionary"""
         return {
             "id": self.id,
             "src": self.src.to_dict(),
@@ -68,7 +67,7 @@ class RelationshipInstance:
 
     @classmethod
     def from_dict(cls, data: Dict):
-        """Deserializza da dizionario"""
+        """Deserializes from a dictionary"""
         return cls(
             id=data["id"],
             src=ServiceInstance.from_dict(data["src"]),
@@ -81,17 +80,17 @@ class RelationshipInstance:
         )
 
     def get_src_id(self) -> str:
-        """Restituisce l'id del Service incapsulato in src"""
+        """Returns the ID of the Service encapsulated in src"""
         return self.src.id
 
     def get_src_name(self) -> str:
-        """Restituisce il nome del Service incapsulato in src"""
+        """Returns the name of the Service encapsulated in src"""
         return self.src.service.name
 
     def get_dst_id(self) -> str:
-        """Restituisce l'id del Service incapsulato in dst"""
+        """Returns the ID of the Service encapsulated in dst"""
         return self.dst.id
 
     def get_dst_name(self) -> str:
-        """Restituisce il nome del Service incapsulato in dst"""
+        """Returns the name of the Service encapsulated in dst"""
         return self.dst.service.name

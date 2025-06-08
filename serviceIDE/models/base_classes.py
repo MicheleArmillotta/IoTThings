@@ -6,14 +6,14 @@ import re
 
 @dataclass
 class Service:
-    """Rappresenta un servizio base dal sistema IoT"""
+    """Represents a base service from the IoT system"""
     name: str
     thing_name: str
     entity_id: str
     space_id: str
-    endpoint: str  # Estratto dall'API - es. "CheckFlameStatus"
+    endpoint: str  # Extracted from the API - e.g., "CheckFlameStatus"
     ip: Any
-    input_params: Dict[str, str] = field(default_factory=dict)  # nome_param -> tipo
+    input_params: Dict[str, str] = field(default_factory=dict)  # param_name -> type
     output_name: Optional[str] = None
     output_type: Optional[str] = None
     type: str = ""
@@ -24,7 +24,7 @@ class Service:
     @classmethod
     def from_api_string(cls, name, thing_name, entity_id, space_id, api_string, ip,
                        type_="", app_category="", description="", keywords=""):
-        """Crea un Service parsando l'API string originale"""
+        """Creates a Service by parsing the original API string"""
         # Parse: "CheckFlameStatus:[NULL]:(flameStatus,int,NULL)"
         match = re.match(r'^(\w+):\[(.*?)\]:\((.*?)\)$', api_string.strip())
         if not match:
@@ -70,11 +70,11 @@ class Service:
         )
 
     def requires_input(self) -> bool:
-        """Verifica se il servizio richiede input"""
+        """Checks if the service requires input"""
         return len(self.input_params) > 0
 
     def to_api_string(self) -> str:
-        """Ricostruisce l'API string originale per compatibilità"""
+        """Reconstructs the original API string for compatibility"""
         input_part = "NULL"
         if self.input_params:
             params = []
@@ -133,6 +133,7 @@ class IoTContext:
         
     @staticmethod
     def _get_local_ip():
+        """Retrieves the local IP address"""
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             s.connect(("8.8.8.8", 80))
@@ -144,7 +145,7 @@ class IoTContext:
 
     def add_thing(self, thing_id: str, address: str, name: str, space_id: str, 
                   model: str, owner: str, vendor: str, description: str):
-        """Aggiunge un thing solo se non esiste già"""
+        """Adds a thing only if it does not already exist"""
         if thing_id not in self.things:
             self.things[thing_id] = Thing(
                 name=name, 
@@ -160,7 +161,7 @@ class IoTContext:
     def add_service_to_entity(self, thing_id: str, service_name: str, entity_id: str, 
                              space_id: str, api: str, type_: str, app_category: str, 
                              description: str, keywords: str, ip: Any):
-        """Aggiunge un servizio a un'entità usando il nuovo formato Service"""
+        """Adds a service to an entity using the new Service format"""
         if thing_id in self.things:
             entity_found = None
             for entity in self.things[thing_id].entities:
@@ -169,7 +170,7 @@ class IoTContext:
                     break
             
             if entity_found:
-                # Verifica se il servizio esiste già
+                # Checks if the service already exists
                 service_exists = any(
                     service.name == service_name and 
                     service.entity_id == entity_id and 
@@ -205,7 +206,7 @@ class IoTContext:
 
     def add_entity_to_thing(self, thing_id: str, entity_name: str, entity_id: str, 
                            space_id: str, type_: str, vendor: str, description: str, owner: str):
-        """Aggiunge un'entità a un thing solo se non esiste già"""
+        """Adds an entity to a thing only if it does not already exist"""
         if thing_id in self.things:
             entity_exists = any(entity.entity_id == entity_id for entity in self.things[thing_id].entities)
             
@@ -224,7 +225,7 @@ class IoTContext:
 
     def add_relationship(self, thing_id: str, space_id: str, name: str, owner: str, 
                         category: str, type_: str, description: str, fs_name: str, ss_name: str):
-        """Aggiunge una relazione legacy"""
+        """Adds a legacy relationship"""
         relationship_exists = any(
             rel.thing_id == thing_id and 
             rel.name == name and 
@@ -249,9 +250,11 @@ class IoTContext:
             self.relationships.append(rel)
 
     def get_things(self):
+        """Returns all things"""
         return list(self.things.values())
 
     def get_entities(self):
+        """Returns all entities"""
         entities = []
         for thing in self.get_things():
             for e in thing.entities:
@@ -259,6 +262,7 @@ class IoTContext:
         return entities
 
     def get_services(self):
+        """Returns all services"""
         all_services = []
         for entity in self.get_entities():
             for s in entity.services:
@@ -266,5 +270,5 @@ class IoTContext:
         return all_services
 
     def get_relationships(self):
+        """Returns all relationships"""
         return self.relationships
-  
