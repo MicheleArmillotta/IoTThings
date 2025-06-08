@@ -82,10 +82,15 @@ class AppCanvas(tk.Canvas):
         self.dragged_node = None
 
     def add_node(self, service, x, y):
-        """Adds a new service node to the canvas and draws it"""
+        # choose color based on service type or input parameters
+        if hasattr(service, "input_values") and service.service.input_params:
+            node_color = "#ffe082"  # yellow for the node with inputs
+        else:
+            node_color = "#b3d9ff"  # colore standard
+
         canvas_id = self.create_oval(
-            x, y, x + 100, y + 60, # Use constants from NodeGraph
-            fill="#b3d9ff", tags="node"
+            x, y, x + 100, y + 60,
+            fill=node_color, tags="node"
         )
         text_id = self.create_text(
             x + 100 // 2, y + 60 // 2,

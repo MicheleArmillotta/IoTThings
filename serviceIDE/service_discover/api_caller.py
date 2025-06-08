@@ -128,7 +128,7 @@ def invoke_iot_app(app, write_fn, input_fn, stop_flag=None):
             continue
 
         # Execute the source service only if not already executed
-        if src_instance.id not in res_map:
+        if len(res_map) == 0:
             write_fn("[FIRST CALL] Executing source service\n")
             req = build_request(src_service, write_fn, input_fn)
             res = call_api(src_service, req, write_fn)
@@ -159,7 +159,7 @@ def invoke_iot_app(app, write_fn, input_fn, stop_flag=None):
                 write_fn(f"[ON-SUCCESS] Source {src_instance.get_display_name()} successful. Executing destination: {dst_instance.get_display_name()}\n")
                 should_execute_dst = True
             else:
-                write_fn(f"[ON-SUCCESS] Source {src_instance.id} failed. Skipping destination: {dst_instance.id}\n")
+                write_fn(f"[ON-SUCCESS] Source {src_instance.id} failed. Skipping destination: {dst_instance.get_display_name()}\n")
         elif rel_type == "condition" or rel_type == "conditional":
             src_result = res_map.get(src_instance.id)
             if src_result and src_result[0] and hasattr(rel, 'condition'):

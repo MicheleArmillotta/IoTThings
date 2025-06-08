@@ -94,7 +94,7 @@ class IoTApp:
             lines.append("\n🔧 Service Instances:")
             for si in self.service_instances:
                 status = "✅" if si.has_configured_inputs() else "⚠️"
-                lines.append(f"   {status} {si.get_display_name()} )")
+                lines.append(f"   {status} {si.get_display_name()} ")
                 if si.input_values:
                     for param, value in si.input_values.items():
                         lines.append(f"       • {param}: {value}")

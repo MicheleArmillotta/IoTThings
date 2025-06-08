@@ -104,7 +104,7 @@ class GraphicalAppEditor(ctk.CTkToplevel):
         
         save_button = ctk.CTkButton(
         button_frame,  # or self if you don't have a toolbar
-        text="Save",
+        text="💾 Save",
         command=self.handle_save
         )
         save_button.pack(side="left", padx=10)

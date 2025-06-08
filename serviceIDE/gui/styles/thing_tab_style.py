@@ -4,9 +4,9 @@ def configure_things_text_tags(text_widget):
     # Indirizzo (address)
     text_widget.tag_config("address", font=("Consolas", 14, "bold"), foreground="#4fc3f7")
     # Descrizione (description)
-    text_widget.tag_config("description", font=("Consolas", 14, "italic"), foreground="#ffd166")
+    text_widget.tag_config("description", font=("Consolas", 14, "italic"), foreground="#000000")
     # Entities
-    text_widget.tag_config("entity", font=("Consolas", 14, "bold"), foreground="#90caf9")
+    text_widget.tag_config("entity", font=("Consolas", 14, "bold"), foreground="#36db31")
     # Nessun servizio
     text_widget.tag_config("warn", foreground="#d9534f")
     #servizio

@@ -180,7 +180,8 @@ class IoTContext:
                         thing_name=self.things[thing_id].id,
                         entity_id=entity_id,
                         space_id=space_id,
-                        api_string=api
+                        api_string=api,
+                        ip=ip
                     ).endpoint
                     for service in entity_found.services
                 )
