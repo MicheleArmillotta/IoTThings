@@ -41,7 +41,7 @@ def create_services_tab(master, context):
                     text.insert(tk.END, f"Space ID: {service.space_id}\n")
                     text.insert(tk.END, "-" * 80 + "\n", "separator")
         if count == 0:
-            text.insert(tk.END, "⚠️ No services found.\n", "warn")
+            text.insert(tk.END, "⚠️ No services found, Scanning for Things...\n", "warn")
         else:
             text.insert(tk.END, f"Total services: {count}\n", "info")
         frame.after(1000, update)

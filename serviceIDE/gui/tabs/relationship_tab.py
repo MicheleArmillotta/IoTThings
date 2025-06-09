@@ -30,7 +30,7 @@ def create_relationships_tab(master, context):
             text.insert(tk.END, f"Destination: {rel.dst}\n")
             text.insert(tk.END, "-" * 70 + "\n", "separator")
         if not relationships:
-            text.insert(tk.END, "⚠️ No relationships found.\n", "warn")
+            text.insert(tk.END, "⚠️ No relationships found, scanning for Things....\n", "warn")
         frame.after(1000, update)
 
     text.tag_config("title", font=("Arial", 14, "bold"), foreground="#334d5c")
