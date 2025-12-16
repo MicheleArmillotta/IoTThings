@@ -1,4 +1,4 @@
-## IoTThings ServiceIDE — Summary
+## IoTThings ServiceIDE
 
 IoTThings ServiceIDE is a graphical Integrated Development Environment for designing, managing, and executing IoT applications in smart space environments. The system automatically discovers IoT devices, their internal components, and the services they expose through multicast network communication, maintaining an up-to-date view of the available resources.
 
